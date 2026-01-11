@@ -57,7 +57,11 @@ export default function Screen() {
       />
 
       <View className="mb-4 h-96 w-full">
-        <MediaStreamView stream={localStream} />
+        <MediaStreamView
+          stream={localStream}
+          sessionState={sessionState}
+          inferenceData={inferenceData}
+        />
       </View>
 
       <MonitoringControls

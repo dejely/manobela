@@ -1,28 +1,88 @@
 import asyncio
-import json
 import logging
 import time
 from datetime import datetime, timezone
 
 import cv2
+import mediapipe as mp
 
+from app.models.inference import InferenceData, Resolution
 from app.services.connection_manager import manager
+from app.services.face_landmarker import FaceLandmarker
+from app.services.face_landmarks import ESSENTIAL_LANDMARKS
+from app.services.smoother import Smoother
 
 logger = logging.getLogger(__name__)
 
 
+TARGET_INTERVAL_MS = 66  # ~15 FPS processing target
+MAX_WIDTH = 640
+RENDER_LANDMARKS_FULL = False  # Option to render all landmarks or only essential ones
+
+
+def process_video_frame(
+    timestamp: str, img_bgr, face_landmarker, smoother: Smoother
+) -> InferenceData:
+    """
+    Process a single video frame.
+    """
+    h, w = img_bgr.shape[:2]
+
+    # Resize if needed
+    if w > MAX_WIDTH:
+        scale = MAX_WIDTH / w
+        w, h = int(w * scale), int(h * scale)
+        img_bgr = cv2.resize(img_bgr, (w, h))
+
+    # Convert BGR to RGB
+    rgb_frame = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+    # Detect landmarks
+    timestamp_ms = int(time.time() * 1000)
+    detection_result = face_landmarker.detect_for_video(mp_image, timestamp_ms)
+
+    raw_landmarks = None
+    if detection_result.face_landmarks:
+        face_landmarks = detection_result.face_landmarks[0]
+        indices = (
+            range(len(face_landmarks)) if RENDER_LANDMARKS_FULL else ESSENTIAL_LANDMARKS
+        )
+
+        # Flatten coordinates
+        raw_landmarks = [
+            coord
+            for idx in indices
+            for coord in (face_landmarks[idx].x, face_landmarks[idx].y)
+        ]
+
+    # Apply smoothing
+    smoothed_landmarks = smoother.update(raw_landmarks)
+
+    return InferenceData(
+        timestamp=timestamp,
+        resolution=Resolution(width=w, height=h),
+        face_landmarks=smoothed_landmarks,
+    )
+
+
 async def process_video_frames(client_id: str, track):
     """
-    Receive video frames from a WebRTC track, perform lightweight processing,
+    Receive video frames from a WebRTC track, perform processing,
     and stream results back over the data channel.
     """
 
     frame_count = 0
     skipped_frames = 0
     last_process_time = 0
+    smoother = Smoother()
 
-    TARGET_INTERVAL_MS = 66  # ~15 FPS processing target
-    MAX_WIDTH = 640
+    # Get the face landmarker singleton
+    try:
+        face_landmarker = FaceLandmarker.get()
+    except RuntimeError as e:
+        logger.error("Face landmarker not available for %s: %s", client_id, e)
+        return
 
     try:
         while True:
@@ -39,50 +99,26 @@ async def process_video_frames(client_id: str, track):
 
                 last_process_time = current_time
 
-                # Log first frame info
-                if frame_count == 1:
-                    img = frame.to_ndarray(format="bgr24")
-                    logger.info(
-                        "Client %s: Receiving %dx%d video",
-                        client_id,
-                        img.shape[1],
-                        img.shape[0],
-                    )
-
-                # Downscale large frames
+                # Convert frame to numpy array
                 img = frame.to_ndarray(format="bgr24")
                 h, w = img.shape[:2]
 
-                # Resize if too large
-                if w > MAX_WIDTH:
-                    scale = MAX_WIDTH / w
-                    new_w = int(w * scale)
-                    new_h = int(h * scale)
-                    img = cv2.resize(img, (new_w, new_h))
-                    logger.debug(
-                        "Resized frame from %dx%d to %dx%d", w, h, new_w, new_h
+                # Log first frame info
+                if frame_count == 1:
+                    logger.info(
+                        "Client %s: Receiving %dx%d video",
+                        client_id,
+                        w,
+                        h,
                     )
 
-                # Placeholder image analysis
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                brightness = float(gray.mean())
-                mean_color = img.mean(axis=(0, 1))
+                timestamp = datetime.now(timezone.utc).isoformat()
+                result = process_video_frame(timestamp, img, face_landmarker, smoother)
 
-                result = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "frame_id": getattr(frame, "pts", None),
-                    "frame_count": frame_count,
-                    "processed_count": frame_count - skipped_frames,
-                    "skipped_frames": skipped_frames,
-                    "resolution": f"{img.shape[1]}x{img.shape[0]}",
-                    "brightness": brightness,
-                    "mean_color": mean_color.tolist(),
-                }
-
-                # Send processing output to the client
+                # Send result
                 channel = manager.data_channels.get(client_id)
                 if channel and channel.readyState == "open":
-                    channel.send(json.dumps(result))
+                    channel.send(result.model_dump_json())
                 else:
                     logger.warning("Data channel not ready for %s", client_id)
 
@@ -106,13 +142,10 @@ async def process_video_frames(client_id: str, track):
                 continue
 
     except asyncio.CancelledError:
-        logger.info(
-            "Frame processing stopped for %s (processed %d/%d frames)",
-            client_id,
-            frame_count - skipped_frames,
-            frame_count,
-        )
+        logger.info("Frame processing stopped for %s", client_id)
+
     except Exception as e:
         logger.error("Fatal error in frame processing for %s: %s", client_id, e)
+
     finally:
         logger.info("Frame processing ended for %s", client_id)
