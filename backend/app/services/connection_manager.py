@@ -1,7 +1,8 @@
+import json
 import logging
 from typing import Dict, Optional
 
-from aiortc import RTCPeerConnection
+from aiortc import RTCDataChannel, RTCPeerConnection
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.peer_connections: Dict[str, RTCPeerConnection] = {}
+        self.data_channels: Dict[str, RTCDataChannel] = {}
 
     async def connect(self, websocket: WebSocket, client_id: str) -> None:
         """Accept a WebSocket connection and register it."""
@@ -26,6 +28,7 @@ class ConnectionManager:
         """Remove a client and its peer connection (if any). Returns the removed RTCPeerConnection."""
         self.active_connections.pop(client_id, None)
         pc = self.peer_connections.pop(client_id, None)
+        self.data_channels.pop(client_id, None)
 
         if pc:
             # Async close should be handled elsewhere
@@ -46,6 +49,17 @@ class ConnectionManager:
                 await ws.send_json(message)
             except Exception as e:
                 logger.error("Failed to send message to %s: %s", client_id, e)
+
+    async def send_data(self, client_id: str, message: dict) -> None:
+        """Send a JSON message via the WebRTC data channel."""
+        channel = self.data_channels.get(client_id)
+        if channel and channel.readyState == "open":
+            try:
+                channel.send(json.dumps(message))
+            except Exception as e:
+                logger.error("Failed to send data to %s: %s", client_id, e)
+        else:
+            logger.warning("Data channel not open for %s", client_id)
 
     async def broadcast(self, message: dict) -> None:
         """Send a message to all connected clients."""

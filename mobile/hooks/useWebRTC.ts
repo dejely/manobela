@@ -9,6 +9,7 @@ import {
 import { useCallback, useRef, useState } from 'react';
 import { MediaStream, RTCPeerConnection } from 'react-native-webrtc';
 import { WebSocketTransport } from '@/services/signaling/web-socket-transport';
+import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
 
 const DEFAULT_RTC_CONFIG: RTCConfiguration = {
   iceServers: [
@@ -36,8 +37,10 @@ interface UseWebRTCReturn {
   error: string | null;
   startConnection: () => void;
   cleanup: () => void;
-  sendMessage: (msg: SignalingMessage) => void;
-  onMessage: (handler: (msg: SignalingMessage) => void) => void;
+  sendSignalingMessage: (msg: SignalingMessage) => void;
+  onSignalingMessage: (handler: (msg: SignalingMessage) => void) => void;
+  sendDataMessage: (msg: any) => void;
+  onDataMessage: (handler: (msg: any) => void) => void;
 }
 
 export const useWebRTC = ({
@@ -46,13 +49,15 @@ export const useWebRTC = ({
   rtcConfig = DEFAULT_RTC_CONFIG,
 }: UseWebRTCProps): UseWebRTCReturn => {
   const [clientId, setClientId] = useState<string | null>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<RTCPeerConnectionState>('new');
+  const pcRef = useRef<RTCPeerConnection | null>(null);
   const transportRef = useRef<SignalingTransport | null>(null);
-  const messageHandlers = useRef<((msg: SignalingMessage) => void)[]>([]);
+  const signalingHandlers = useRef<((msg: SignalingMessage) => void)[]>([]);
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const dataChannelHandlers = useRef<((msg: any) => void)[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = useCallback((msg: SignalingMessage) => {
+  const sendSignalingMessage = useCallback((msg: SignalingMessage) => {
     try {
       transportRef.current?.send(msg);
     } catch (err: any) {
@@ -60,8 +65,8 @@ export const useWebRTC = ({
     }
   }, []);
 
-  const onMessage = useCallback((handler: (msg: SignalingMessage) => void) => {
-    messageHandlers.current.push(handler);
+  const onSignalingMessage = useCallback((handler: (msg: SignalingMessage) => void) => {
+    signalingHandlers.current.push(handler);
   }, []);
 
   const handleSignalingMessage = useCallback(async (msg: SignalingMessage) => {
@@ -107,7 +112,28 @@ export const useWebRTC = ({
       setError(`Signaling error: ${err.message}`);
     }
 
-    messageHandlers.current.forEach((cb) => cb(msg));
+    signalingHandlers.current.forEach((cb) => cb(msg));
+  }, []);
+
+  const sendDataMessage = useCallback((msg: any) => {
+    try {
+      dataChannelRef.current?.send(JSON.stringify(msg));
+    } catch (err: any) {
+      setError(err.message || 'Failed to send data message');
+    }
+  }, []);
+
+  const onDataMessage = useCallback((handler: (msg: any) => void) => {
+    dataChannelHandlers.current.push(handler);
+  }, []);
+
+  const handleDataMessage = useCallback(async (msg: any) => {
+    try {
+      dataChannelHandlers.current.forEach((cb) => cb(msg));
+    } catch (err: any) {
+      console.error('Error handling data message:', err);
+      setError(`Data error: ${err.message}`);
+    }
   }, []);
 
   const initTransport = useCallback(async () => {
@@ -118,6 +144,38 @@ export const useWebRTC = ({
     console.log('WebSocket transport connected');
     return transport;
   }, [url, handleSignalingMessage]);
+
+  const initDataChannel = useCallback(
+    (pc: RTCPeerConnection) => {
+      const channel = pc.createDataChannel('data', { ordered: true });
+      dataChannelRef.current = channel;
+
+      // @ts-ignore
+      channel.onopen = () => {
+        console.log('Data channel opened');
+        // maybe send initial handshake or keepalive
+      };
+
+      // @ts-ignore
+      channel.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        handleDataMessage(msg);
+      };
+
+      // @ts-ignore
+      channel.onclose = () => {
+        console.log('Data channel closed');
+      };
+
+      // @ts-ignore
+      channel.onerror = (err) => {
+        console.error('Data channel error:', err);
+      };
+
+      return channel;
+    },
+    [handleDataMessage]
+  );
 
   const initPeerConnection = useCallback((): RTCPeerConnection => {
     const pc = new RTCPeerConnection(rtcConfig);
@@ -134,7 +192,7 @@ export const useWebRTC = ({
             sdpMLineIndex: event.candidate.sdpMLineIndex,
           },
         };
-        sendMessage(msg);
+        sendSignalingMessage(msg);
       } else {
         console.log('ICE gathering complete');
       }
@@ -162,7 +220,7 @@ export const useWebRTC = ({
 
     pcRef.current = pc;
     return pc;
-  }, [sendMessage, rtcConfig]);
+  }, [sendSignalingMessage, rtcConfig]);
 
   const startConnection = useCallback(async () => {
     try {
@@ -178,6 +236,8 @@ export const useWebRTC = ({
       await initTransport();
 
       const pc = initPeerConnection();
+
+      initDataChannel(pc);
 
       stream.getTracks().forEach((track) => {
         console.log(`Adding ${track.kind} track to peer connection`);
@@ -198,7 +258,7 @@ export const useWebRTC = ({
         sdp: offer.sdp!,
         sdpType: offer.type,
       };
-      sendMessage(msg);
+      sendSignalingMessage(msg);
 
       console.log('Offer sent, waiting for answer...');
     } catch (err: any) {
@@ -206,7 +266,7 @@ export const useWebRTC = ({
       setError(`Connection error: ${err.message}`);
       setConnectionStatus('failed');
     }
-  }, [stream, initPeerConnection, initTransport, sendMessage]);
+  }, [stream, initPeerConnection, initTransport, initDataChannel, sendSignalingMessage]);
 
   const cleanup = useCallback(() => {
     console.log('Cleaning up WebRTC connection...');
@@ -233,7 +293,9 @@ export const useWebRTC = ({
     error,
     startConnection,
     cleanup,
-    sendMessage,
-    onMessage,
+    sendSignalingMessage,
+    onSignalingMessage,
+    sendDataMessage,
+    onDataMessage,
   };
 };

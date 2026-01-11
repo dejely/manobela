@@ -1,3 +1,5 @@
+import asyncio
+import json
 import logging
 
 from aiortc import (
@@ -34,6 +36,37 @@ async def create_peer_connection(client_id: str) -> RTCPeerConnection:
             if removed_pc:
                 await removed_pc.close()
 
+    @pc.on("track")
+    def on_track(track):
+        logger.info("Track received: %s kind=%s", track.kind, track.kind)
+
+        if track.kind == "video":
+
+            async def process_frames():
+                while True:
+                    try:
+                        frame = await track.recv()
+                        dummy_result = {"frame_id": frame.time, "inference": "ok"}
+
+                        channel = manager.data_channels.get(client_id)
+                        if channel and channel.readyState == "open":
+                            channel.send(json.dumps(dummy_result))
+
+                    except Exception as e:
+                        logger.error("Error processing video frame: %s", e)
+                        break
+
+            asyncio.create_task(process_frames())
+
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        logger.info("Data channel established: %s", channel.label)
+        manager.data_channels[client_id] = channel  # store the channel
+
+        @channel.on("message")
+        def on_message(message):
+            logger.info("Data channel message from %s: %s", client_id, message)
+
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
         if candidate:
@@ -48,14 +81,6 @@ async def create_peer_connection(client_id: str) -> RTCPeerConnection:
                     },
                 },
             )
-
-    @pc.on("datachannel")
-    def on_datachannel(channel):
-        logger.info("Data channel established: %s", channel.label)
-
-        @channel.on("message")
-        def on_message(message):
-            logger.info("Data channel message from %s: %s", client_id, message)
 
     return pc
 

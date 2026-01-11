@@ -1,7 +1,7 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Stack } from 'expo-router';
-import * as React from 'react';
 import { View, ScrollView } from 'react-native';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -20,14 +20,24 @@ const WS_URL = `${WS_BASE}/driver-monitoring`;
 export default function Screen() {
   const { localStream } = useCamera();
 
-  const { clientId, startConnection, cleanup, transportStatus, connectionStatus } = useWebRTC({
-    url: WS_URL,
-    stream: localStream,
-  });
+  const { clientId, startConnection, cleanup, transportStatus, connectionStatus, onDataMessage } =
+    useWebRTC({
+      url: WS_URL,
+      stream: localStream,
+    });
 
-  const [isRunning, setIsRunning] = React.useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [inferenceData, setInferenceData] = useState<Record<string, any>>({});
 
-  const handleToggle = React.useCallback(async () => {
+  useEffect(() => {
+    const handler = (msg: any) => {
+      setInferenceData(msg);
+    };
+
+    onDataMessage(handler);
+  }, [onDataMessage]);
+
+  const handleToggle = useCallback(async () => {
     if (!isRunning) {
       try {
         setIsRunning(true);
@@ -61,6 +71,11 @@ export default function Screen() {
 
       <View className="mb-4 h-96 w-full">
         <MediaStreamView stream={localStream} />
+      </View>
+
+      <View className="mb-4">
+        <Text>Latest Inference:</Text>
+        <Text>{inferenceData ? JSON.stringify(inferenceData, null, 2) : 'No data yet'}</Text>
       </View>
 
       <Button onPress={handleToggle} disabled={isDisabled} className="w-full">
