@@ -12,7 +12,7 @@ from aiortc.sdp import candidate_from_sdp
 from app.models.webrtc import ICECandidateMessage, MessageType, SDPMessage
 from app.services.connection_manager import ConnectionManager
 from app.services.face_landmarker import FaceLandmarker
-from app.services.video_precessor import process_video_frames
+from app.services.video_processor import process_video_frames
 
 logger = logging.getLogger(__name__)
 
