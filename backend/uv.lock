@@ -146,7 +146,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiortc", specifier = ">=1.8.0" },
+    { name = "aiortc", specifier = ">=1.14.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.128.0" },
     { name = "mediapipe", specifier = ">=0.10.31" },
     { name = "opencv-python", specifier = ">=4.12.0.88" },
