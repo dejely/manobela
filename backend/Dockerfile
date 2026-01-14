@@ -1,25 +1,29 @@
-FROM python:3.12-slim
+# Use official Python slim image
+FROM python:3.12-slim-trixie
 
-# Set working dir
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.25 /uv /uvx /bin/
+
+# Set working directory
 WORKDIR /app
 
-# Prevent Python from writing .pyc files
-ENV PYTHONDONTWRITEBYTECODE=1
-# Ensure stdout/stderr are unbuffered
-ENV PYTHONUNBUFFERED=1
+# Copy only manifest files for dependency installation first
+COPY pyproject.toml uv.lock /app/
 
-# Default port (fallback if not provided)
-ENV PORT=8000
+# Disable development dependencies
+ENV UV_NO_DEV=1
+# Compile bytecode
+# ENV UV_COMPILE_BYTECODE=1
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies into the project .venv via uv
+RUN uv sync --frozen --no-cache
 
-# Copy application source
-COPY . .
+# Copy the rest of the application source
+COPY . /app
 
-# Expose dynamic port
-EXPOSE ${PORT}
+# Expose the port
+EXPOSE ${PORT:-8000}
 
 # Run the app
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD sh -c "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+
