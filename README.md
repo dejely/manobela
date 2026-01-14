@@ -46,19 +46,19 @@ Manobela is a real-time driver monitoring system that uses computer vision to de
 
 #### 1. Clone the repo
 
-```bash
+```sh
 git clone git@github.com:popcorn-prophets/manobela.git
 cd manobela
 ```
 
 #### 2. Install dependencies
 
-```bash
+```sh
 cd backend
 uv sync
 ```
 
-```bash
+```sh
 cd mobile
 pnpm install
 ```
@@ -67,7 +67,7 @@ pnpm install
 
 Copy the `.env.example` file to `.env` in both the backend and mobile directories.
 
-```bash
+```sh
 cp .env.example .env
 ```
 
@@ -82,15 +82,16 @@ pre-commit install --install-hooks
 
 #### 5. Run the application
 
-Two terminals are needed
+Run simultaneously the backend and the mobile app in separate terminals:
 
-```bash
+```sh
 cd backend
 source .venv/bin/activate
 python run.py
+# or uv run run.py
 ```
 
-```bash
+```sh
 cd mobile
-pnpm android
+pnpm android  # or `pnpm ios`
 ```
