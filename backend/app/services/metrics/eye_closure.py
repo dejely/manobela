@@ -16,7 +16,7 @@ class EyeClosureMetric(BaseMetric):
 
     DEFAULT_EAR_THRESHOLD = 0.20
     DEFAULT_PERCLOS_THRESHOLD = 0.4
-    DEFAULT_WINDOW_SIZE = 150  # Number of frames (~10s at 15 FPS)
+    DEFAULT_WINDOW_SIZE = 100  # Number of frames (~10s at 10 FPS)
 
     def __init__(
         self,

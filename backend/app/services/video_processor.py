@@ -18,8 +18,8 @@ from app.services.smoother import Smoother
 logger = logging.getLogger(__name__)
 
 
-TARGET_INTERVAL_MS = 66  # ~15 FPS processing target
-MAX_WIDTH = 640
+TARGET_INTERVAL_MS = 100  # ~10 FPS processing target
+MAX_WIDTH = 480
 RENDER_LANDMARKS_FULL = False  # Option to render all landmarks or only essential ones
 
 # Dedicated thread pool for CPU-bound frame processing
@@ -177,7 +177,7 @@ async def process_video_frames(
 
                 # Periodic logging of processing stats
                 if frame_count % 100 == 0:
-                    effective_fps = (frame_count - skipped_frames) / (frame_count / 15)
+                    effective_fps = (frame_count - skipped_frames) / (frame_count / 10)
                     logger.info(
                         "Client %s: Processed %d/%d frames (%.1f fps effective)",
                         client_id,
