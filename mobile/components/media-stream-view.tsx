@@ -33,8 +33,8 @@ export const MediaStreamView = ({
   if (!stream) return null;
 
   const landmarks = inferenceData?.face_landmarks || null;
-  const videoWidth = inferenceData?.resolution?.width || 640;
-  const videoHeight = inferenceData?.resolution?.height || 480;
+  const videoWidth = inferenceData?.resolution?.width || 480;
+  const videoHeight = inferenceData?.resolution?.height || 320;
 
   // Determine whether to show landmarks
   const shouldShowLandmarks =

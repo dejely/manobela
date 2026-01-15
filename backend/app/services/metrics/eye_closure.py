@@ -2,6 +2,7 @@ import logging
 from collections import deque
 from typing import Any, Dict, List, Optional
 
+from app.core.config import settings
 from app.services.metrics.base_metric import BaseMetric
 from app.services.metrics.utils.ear import average_ear
 
@@ -16,23 +17,26 @@ class EyeClosureMetric(BaseMetric):
 
     DEFAULT_EAR_THRESHOLD = 0.20
     DEFAULT_PERCLOS_THRESHOLD = 0.4
-    DEFAULT_WINDOW_SIZE = 150  # Number of frames (~10s at 15 FPS)
+    DEFAULT_WINDOW_SEC = 10
 
     def __init__(
         self,
         ear_threshold: float = DEFAULT_EAR_THRESHOLD,
         perclos_threshold: float = DEFAULT_PERCLOS_THRESHOLD,
-        window_size: int = DEFAULT_WINDOW_SIZE,
+        window_sec: int = DEFAULT_WINDOW_SEC,
     ):
         """
         Args:
             ear_threshold: EAR value below which eyes are considered closed.
             perclos_threshold: PERCLOS ratio above which alert is triggered.
-            window_size: Number of frames for rolling PERCLOS calculation.
+            window_sec: Rolling window duration in seconds.
         """
+
         self.ear_threshold = ear_threshold
         self.perclos_threshold = perclos_threshold
-        self.window_size = window_size
+
+        # Convert seconds to frames based on backend target FPS
+        self.window_size = max(1, int(window_sec * settings.target_fps))
 
         self.last_value: Optional[float] = None
         self.eye_history: deque[bool] = deque(maxlen=self.window_size)

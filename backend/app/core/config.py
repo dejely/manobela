@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     metered_secret_key: str = ""
     metered_credentials_api_key: str = ""
 
+    # Video processing
+    target_fps: int = 15
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

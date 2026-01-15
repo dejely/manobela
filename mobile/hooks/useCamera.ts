@@ -22,9 +22,9 @@ export function useCamera(): UseCameraReturn {
           audio: false, // no audio
           video: {
             facingMode: 'user', // front camera
-            width: { ideal: 640, max: 1280 },
-            height: { ideal: 480, max: 720 },
-            frameRate: { ideal: 15, min: 10, max: 30 },
+            width: { ideal: 480, max: 640 },
+            height: { ideal: 320, max: 480 },
+            frameRate: { ideal: 15, max: 24 },
           },
         };
 
