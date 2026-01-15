@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.core.dependencies import ConnectionManagerDep, FaceLandmarkerDep
+from app.core.dependencies import ConnectionManagerWsDep, FaceLandmarkerDep
 from app.models.webrtc import MessageType
 from app.services.webrtc_handler import (
     handle_answer,
@@ -21,7 +21,7 @@ router = APIRouter(tags=["driver_monitoring"])
 @router.websocket("/ws/driver-monitoring")
 async def driver_monitoring(
     websocket: WebSocket,
-    connection_manager: ConnectionManagerDep,
+    connection_manager: ConnectionManagerWsDep,
     face_landmarker: FaceLandmarkerDep,
 ):
     """
