@@ -1,6 +1,6 @@
 """""
 Head pose metric using 2D landmarks only.
-Estimates yaw, pitch, and roll angles using geometric relationships.
+Estimates yaw, pitch, and roll angles
 """
 import logging
 from collections import deque
@@ -18,7 +18,9 @@ class HeadPoseMetric(BaseMetric):
     Head pose metric using yaw, pitch, and roll angles computed from 2D landmarks.
     Detects when head is turned away from forward-facing position.
 
-    This implementation uses only 2D (x, y) landmarks - no 3D coordinates required.
+    This implementation uses only 2D (x, y) landmarks.
+
+    Ps. Inaccurate pitch angle since only 2D
     """
 
     # Default thresholds in degrees
@@ -111,6 +113,7 @@ class HeadPoseMetric(BaseMetric):
         # Overall alert if any axis exceeds threshold
         any_alert = yaw_alert or pitch_alert or roll_alert
 
+        #App alerts
         return {
             "yaw": yaw,
             "pitch": pitch,

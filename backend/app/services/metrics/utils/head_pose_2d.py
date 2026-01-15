@@ -85,9 +85,8 @@ def compute_yaw_angle(landmarks: List[Tuple[float, float]]) -> float:
     ratio = (dist_right - dist_left) / total_dist
 
     # Convert ratio to approximate angle (empirically calibrated)
-    # This is a simplified model - in practice, you'd calibrate this
-    # For MediaPipe landmarks, roughly: ratio of 0.3 ≈ 30 degrees
-    yaw = ratio * 60.0  # Scale factor - adjust based on testing
+    # Approx value for offset
+    yaw = ratio * 60.0
 
     return yaw
 
@@ -109,6 +108,7 @@ def compute_pitch_angle(landmarks: List[Tuple[float, float]]) -> float:
     if len(landmarks) <= max(NOSE_TIP, CHIN, FOREHEAD):
         return 0.0
 
+    #landmarks needed
     nose = landmarks[NOSE_TIP]
     chin = landmarks[CHIN]
     forehead = landmarks[FOREHEAD]
@@ -126,8 +126,8 @@ def compute_pitch_angle(landmarks: List[Tuple[float, float]]) -> float:
     offset = (nose[1] - face_center_y) / face_height
 
     # Convert to approximate angle (empirically calibrated)
-    # This is a simplified model - adjust based on testing
-    pitch = offset * 40.0  # Scale factor - adjust based on testing
+    # Approximated value of the offset
+    pitch = offset * 40.0
 
     return pitch
 
