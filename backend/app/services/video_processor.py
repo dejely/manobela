@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import functools
 import logging
 import os
@@ -30,6 +31,7 @@ RENDER_LANDMARKS_FULL = False  # Option to render all landmarks or only essentia
 
 # Dedicated thread pool for CPU-bound frame processing
 executor = ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 4))
+atexit.register(executor.shutdown, wait=True)
 
 
 def process_video_frame(
