@@ -113,6 +113,9 @@ async def process_video_frames(
     metric_manager = MetricManager()
     smoother = Smoother()
 
+    data_channel_retries = 0
+    MAX_DATA_CHANNEL_RETRIES = 10
+
     try:
         while True:
             if stop_processing.is_set():
@@ -155,8 +158,18 @@ async def process_video_frames(
                 # Get data channel
                 channel = connection_manager.data_channels.get(client_id)
                 if not channel or channel.readyState != "open":
-                    logger.info("Data channel closed for %s; skipping frame", client_id)
-                    break
+                    logger.info("Data channel not ready for %s; waiting...", client_id)
+                    data_channel_retries += 1
+                    if data_channel_retries > MAX_DATA_CHANNEL_RETRIES:
+                        logger.warning(
+                            "Data channel persistently unavailable for %s; stopping processing",
+                            client_id,
+                        )
+                        break
+                    await asyncio.sleep(0.05)
+                    continue
+                else:
+                    data_channel_retries = 0
 
                 # Convert frame to numpy array
                 img = frame.to_ndarray(format="bgr24")
@@ -188,12 +201,14 @@ async def process_video_frames(
                 # Send result
                 try:
                     channel.send(result.model_dump_json())
-                except Exception:
+                except Exception as e:
                     logger.info(
-                        "Data channel send failed for %s; stopping processing",
+                        "Data channel send failed for %s: %s",
                         client_id,
+                        e,
                     )
-                    break
+                    await asyncio.sleep(0.05)
+                    continue
 
                 # Update counters
                 processed_frames += 1
