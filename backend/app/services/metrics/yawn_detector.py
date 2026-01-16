@@ -42,6 +42,8 @@ class YawnMetric(BaseMetric):
         self._open_counter = 0
         self._yawn_active = False
 
+
+    # May Integrate mar.py in utils
     def _compute_mar(
         self, landmarks: Sequence[Sequence[float]]
     ) -> Optional[float]:
