@@ -145,6 +145,7 @@ class YawnMetric(BaseMetric):
             ),
         }
 
+
     def reset(self):
         self.smoother.reset()
         self._open_counter = 0
