@@ -128,7 +128,7 @@ def compute_pitch_angle(landmarks: List[Tuple[float, float]]) -> float:
 
     # Convert to approximate angle (empirically calibrated)
     # Approximated value of the offset
-    pitch = offset * 40.0
+    pitch = -offset * 40.0
 
     return pitch
 
