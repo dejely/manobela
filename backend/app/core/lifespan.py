@@ -8,7 +8,7 @@ from app.services.face_landmarker import (
     MediapipeFaceLandmarker,
     create_face_landmarker,
 )
-from app.services.object_detector import create_object_detector
+from app.services.object_detector import YoloObjectDetector, create_object_detector
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     app.state.face_landmarker = create_face_landmarker(MediapipeFaceLandmarker)
 
     # Create object detector
-    app.state.object_detector = create_object_detector()
+    app.state.object_detector = create_object_detector(YoloObjectDetector)
 
     logger.info("Application started")
 
@@ -61,6 +61,11 @@ async def lifespan(app: FastAPI):
 
         # Close object detector
         if getattr(app.state, "object_detector", None):
-            app.state.object_detector = None
+            try:
+                app.state.object_detector.close()
+            except Exception as e:
+                logger.error("Error closing ObjectDetector: %s", e)
+            finally:
+                app.state.object_detector = None
 
         logger.info("Shutdown complete")

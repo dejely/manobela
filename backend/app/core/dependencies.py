@@ -7,7 +7,7 @@ from fastapi import Depends, Request, WebSocket
 
 from app.services.connection_manager import ConnectionManager
 from app.services.face_landmarker import FaceLandmarker
-from app.services.object_detector import ObjectDetector
+from app.services.object_detector import YoloObjectDetector
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +28,11 @@ def get_face_landmarker_ws(websocket: WebSocket) -> FaceLandmarker:
     return websocket.app.state.face_landmarker
 
 
-def get_object_detector(request: Request) -> ObjectDetector:
+def get_object_detector(request: Request) -> YoloObjectDetector:
     return request.app.state.object_detector
 
 
-def get_object_detector_ws(websocket: WebSocket) -> ObjectDetector:
+def get_object_detector_ws(websocket: WebSocket) -> YoloObjectDetector:
     return websocket.app.state.object_detector
 
 
@@ -42,5 +42,5 @@ ConnectionManagerWsDep = Annotated[
 ]
 FaceLandmarkerDep = Annotated[FaceLandmarker, Depends(get_face_landmarker)]
 FaceLandmarkerDepWs = Annotated[FaceLandmarker, Depends(get_face_landmarker_ws)]
-ObjectDetectorDep = Annotated[ObjectDetector, Depends(get_object_detector)]
-ObjectDetectorDepWs = Annotated[ObjectDetector, Depends(get_object_detector_ws)]
+ObjectDetectorDep = Annotated[YoloObjectDetector, Depends(get_object_detector)]
+ObjectDetectorDepWs = Annotated[YoloObjectDetector, Depends(get_object_detector_ws)]

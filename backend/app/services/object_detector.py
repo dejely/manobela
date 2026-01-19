@@ -1,6 +1,8 @@
 import logging
 import os
+import threading
 from pathlib import Path
+from typing import Protocol
 
 import cv2
 import numpy as np
@@ -19,12 +21,24 @@ MODEL_PATH = PROJECT_ROOT / "assets" / "models" / "yolov8n.onnx"
 ESSENTIAL_CLASSES: list[int] = [67]  # cell phone
 
 
-class ObjectDetector:
+class ObjectDetector(Protocol):
+    def detect(
+        self,
+        frame: np.ndarray,
+        normalize: bool = True,
+        conf_threshold: float = 0.3,
+        iou_threshold: float = 0.5,
+    ) -> list[ObjectDetection]: ...
+
+    def close(self) -> None: ...
+
+
+class YoloObjectDetector(ObjectDetector):
     """
     Object detector using YOLOv8 ONNX model.
     """
 
-    def __init__(self, model_path: Path, input_size: int = 640):
+    def __init__(self, model_path: Path = MODEL_PATH, input_size: int = 640):
         """
         Initialize object detector.
 
@@ -36,6 +50,9 @@ class ObjectDetector:
             ValueError: If parameters are invalid.
             RuntimeError: If model loading fails.
         """
+        self._lock = threading.Lock()
+        self._closed = False
+
         # Validate input_size
         if not isinstance(input_size, int) or input_size <= 0:
             raise ValueError(
@@ -96,12 +113,16 @@ class ObjectDetector:
         Returns:
             List of detected objects.
         """
+        if self._closed or self.session is None:
+            raise RuntimeError("Object detector has been closed")
+
         try:
             img, ratio, pad = letterbox(frame, self.input_size)
 
             tensor = self._preprocess(img)
 
-            outputs = self.session.run(None, {self.input_name: tensor})
+            with self._lock:
+                outputs = self.session.run(None, {self.input_name: tensor})
 
             # Validate outputs
             if not outputs or len(outputs) == 0:
@@ -127,6 +148,18 @@ class ObjectDetector:
         except Exception as e:
             logger.error(f"Detection failed: {e}", exc_info=True)
             raise RuntimeError(f"Inference failed: {e}") from e
+
+    def close(self) -> None:
+        """
+        Close the ONNX Runtime session and release resources.
+        Safe to call multiple times.
+        """
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            self.session = None
+            self.input_name = None
 
     @staticmethod
     def _preprocess(img: np.ndarray) -> np.ndarray:
@@ -168,7 +201,7 @@ class ObjectDetector:
 
             # Filter by confidence & essential classes
             boxes, confidences, class_ids = (
-                ObjectDetector._filter_confidence_and_classes(
+                YoloObjectDetector._filter_confidence_and_classes(
                     boxes, confidences, class_ids, conf_thres
                 )
             )
@@ -176,7 +209,7 @@ class ObjectDetector:
                 return []
 
             # Convert xywh -> xyxy
-            boxes = ObjectDetector._xywh_to_xyxy(boxes)
+            boxes = YoloObjectDetector._xywh_to_xyxy(boxes)
 
             # Undo letterbox
             boxes /= ratio
@@ -193,7 +226,7 @@ class ObjectDetector:
                 boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, h)
 
             # Apply class-aware NMS
-            keep_idxs = ObjectDetector._apply_nms(
+            keep_idxs = YoloObjectDetector._apply_nms(
                 boxes, confidences, class_ids, conf_thres, iou_thres
             )
             boxes = boxes[keep_idxs]
@@ -201,7 +234,9 @@ class ObjectDetector:
             class_ids = class_ids[keep_idxs]
 
             # Convert to ObjectDetection
-            return ObjectDetector._to_object_detections(boxes, confidences, class_ids)
+            return YoloObjectDetector._to_object_detections(
+                boxes, confidences, class_ids
+            )
 
         except Exception as e:
             logger.error(f"Postprocessing failed: {e}")
@@ -306,6 +341,9 @@ class ObjectDetector:
 
     def _validate_model_input(self) -> None:
         """Validate model input shape and type."""
+        if self._closed or self.session is None:
+            return
+
         try:
             input_shape = self.session.get_inputs()[0].shape
             input_type = self.session.get_inputs()[0].type
@@ -323,17 +361,8 @@ class ObjectDetector:
             logger.error(f"Failed to validate model input: {e}")
 
 
-def create_object_detector(model_path: Path = MODEL_PATH) -> ObjectDetector:
+def create_object_detector(implementation: type[ObjectDetector]) -> ObjectDetector:
     """
-    Object Detector factory.
+    Factory method to create a object detector.
     """
-    try:
-        detector = ObjectDetector(model_path)
-        logger.info("Object Detector initialized")
-        return detector
-    except (ValueError, RuntimeError):
-        # Re-raise standard exceptions
-        raise
-    except Exception as e:
-        logger.exception("Object Detector initialization failed with unexpected error")
-        raise RuntimeError(f"Object Detector initialization failed: {e}") from e
+    return implementation()

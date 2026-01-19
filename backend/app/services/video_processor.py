@@ -3,7 +3,6 @@ import atexit
 import functools
 import logging
 import os
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -19,14 +18,10 @@ from app.services.face_landmarker import (
 )
 from app.services.face_landmarks import ESSENTIAL_LANDMARKS
 from app.services.metrics.metric_manager import MetricManager
-from app.services.object_detector import ObjectDetector
+from app.services.object_detector import YoloObjectDetector
 from app.services.smoother import Smoother
 
 logger = logging.getLogger(__name__)
-
-# YOLO ONNX model is NOTthread-safe.
-# Use a global lock to prevent concurrent access.
-object_detector_lock = threading.Lock()
 
 TARGET_FPS = max(1, settings.target_fps)
 TARGET_INTERVAL_SEC = 1 / TARGET_FPS
@@ -42,7 +37,7 @@ def process_video_frame(
     timestamp: str,
     img_bgr,
     face_landmarker: FaceLandmarker,
-    object_detector: ObjectDetector,
+    object_detector: YoloObjectDetector,
     metric_manager: MetricManager,
     smoother: Smoother,
 ) -> InferenceData:
@@ -64,8 +59,7 @@ def process_video_frame(
     smoothed_landmarks = smoother.update(essential_landmarks)
 
     # Detect objects
-    with object_detector_lock:
-        object_detections = object_detector.detect(img_bgr, normalize=True)
+    object_detections = object_detector.detect(img_bgr, normalize=True)
 
     # Update metrics
     frame_data = {}
@@ -86,7 +80,7 @@ async def process_video_frames(
     client_id: str,
     track,
     face_landmarker,
-    object_detector: ObjectDetector,
+    object_detector: YoloObjectDetector,
     connection_manager: ConnectionManager,
     stop_processing: asyncio.Event,
 ) -> None:

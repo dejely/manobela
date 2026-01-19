@@ -13,7 +13,7 @@ from aiortc.sdp import candidate_from_sdp
 from app.models.webrtc import ICECandidateMessage, MessageType, SDPMessage
 from app.services.connection_manager import ConnectionManager
 from app.services.ice_servers import get_ice_servers
-from app.services.object_detector import ObjectDetector
+from app.services.object_detector import YoloObjectDetector
 from app.services.video_processor import process_video_frames
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ async def create_peer_connection(
     client_id: str,
     connection_manager: ConnectionManager,
     face_landmarker,
-    object_detector: ObjectDetector,
+    object_detector: YoloObjectDetector,
 ) -> RTCPeerConnection:
     """
     Initialize a WebRTC peer connection and wire up all event handlers.
@@ -103,7 +103,7 @@ async def handle_offer(
     message: dict,
     connection_manager: ConnectionManager,
     face_landmarker,
-    object_detector: ObjectDetector,
+    object_detector: YoloObjectDetector,
 ) -> None:
     """
     Handle an incoming SDP offer from a client and send back an answer.
