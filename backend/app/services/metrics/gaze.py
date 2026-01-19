@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from app.services.metrics.base_metric import BaseMetric, MetricOutputBase
+from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.utils.eye_gaze_ratio import (
     left_eye_gaze_ratio,
     right_eye_gaze_ratio,
@@ -39,8 +40,8 @@ class GazeMetric(BaseMetric):
         self.horizontal_range = horizontal_range
         self.vertical_range = vertical_range
 
-    def update(self, frame_data: dict[str, Any]) -> GazeMetricOutput:
-        landmarks = frame_data.get("landmarks")
+    def update(self, context: FrameContext) -> GazeMetricOutput:
+        landmarks = context.face_landmarks
         if not landmarks:
             return {
                 "gaze_on_road": None,

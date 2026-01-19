@@ -1,10 +1,10 @@
 import logging
-from typing import Any
 
 from typing_extensions import TypedDict
 
 from app.services.metrics.base_metric import BaseMetric
 from app.services.metrics.eye_closure import EyeClosureMetric, EyeClosureMetricOutput
+from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.gaze import GazeMetric, GazeMetricOutput
 from app.services.metrics.head_pose import HeadPoseMetric, HeadPoseMetricOutput
 from app.services.metrics.yawn import YawnMetric, YawnMetricOutput
@@ -40,7 +40,7 @@ class MetricManager:
             "phone_usage": PhoneUsageMetric(),
         }
 
-    def update(self, frame_data: dict[str, Any]) -> MetricsOutput:
+    def update(self, context: FrameContext) -> MetricsOutput:
         """
         Update all metrics with the current frame and return combined results.
         """
@@ -48,7 +48,7 @@ class MetricManager:
 
         for metric_id, metric in self.metrics.items():
             try:
-                res = metric.update(frame_data)
+                res = metric.update(context)
                 if res:
                     results[metric_id] = res
             except Exception as e:

@@ -17,6 +17,7 @@ from app.services.face_landmarker import (
     get_essential_landmarks,
 )
 from app.services.face_landmarks import ESSENTIAL_LANDMARKS
+from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.metric_manager import MetricManager
 from app.services.object_detector import YoloObjectDetector
 from app.services.smoother import Smoother
@@ -62,10 +63,10 @@ def process_video_frame(
     object_detections = object_detector.detect(img_bgr, normalize=True)
 
     # Update metrics
-    frame_data = {}
-    frame_data["landmarks"] = face_landmarks
-    frame_data["object_detections"] = object_detections
-    metrics = metric_manager.update(frame_data)
+    frame_context = FrameContext(
+        face_landmarks=face_landmarks, object_detections=object_detections
+    )
+    metrics = metric_manager.update(frame_context)
 
     return InferenceData(
         timestamp=timestamp,

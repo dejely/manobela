@@ -1,7 +1,7 @@
-from typing import Any, Optional, Sequence
+from typing import Optional, Sequence
 
-from app.services.face_landmarker import FaceLandmark2D
 from app.services.metrics.base_metric import BaseMetric, MetricOutputBase
+from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.utils.mar import compute_mar
 from app.services.smoother import Smoother
 
@@ -91,12 +91,9 @@ class YawnMetric(BaseMetric):
         self._yawn_active = False
         self._yawn_count = 0
 
-    def update(self, frame_data: dict[str, Any]) -> YawnMetricOutput:
-        landmarks: Sequence[FaceLandmark2D] = frame_data.get("landmarks", [])
-
+    def update(self, context: FrameContext) -> YawnMetricOutput:
+        landmarks = context.face_landmarks
         if not landmarks:
-            # Do NOT reset state on transient landmark dropouts
-            # Preserve yawn progress and active state
             return {
                 "mar": None,
                 "yawning": self._yawn_active,  # Preserved state

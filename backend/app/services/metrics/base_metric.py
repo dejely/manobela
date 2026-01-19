@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 from typing_extensions import TypedDict
+
+from app.services.metrics.frame_context import FrameContext
 
 
 class MetricOutputBase(TypedDict, total=False):
@@ -18,7 +19,7 @@ class BaseMetric(ABC):
     """
 
     @abstractmethod
-    def update(self, frame_data: dict[str, Any]) -> MetricOutputBase:
+    def update(self, context: FrameContext) -> MetricOutputBase:
         """
         Update the metric with the latest frame data.
 

@@ -1,4 +1,5 @@
 from app.services.metrics.base_metric import BaseMetric, MetricOutputBase
+from app.services.metrics.frame_context import FrameContext
 
 PHONE_CLASS_ID = 67  # COCO
 
@@ -24,8 +25,15 @@ class PhoneUsageMetric(BaseMetric):
         self.min_consecutive_frames = min_consecutive_frames
         self.counter = 0
 
-    def update(self, frame_data) -> PhoneUsageMetricOutput:
-        obj_detections = frame_data.get("object_detections", [])
+    def update(self, context: FrameContext) -> PhoneUsageMetricOutput:
+        obj_detections = context.object_detections
+        if not obj_detections:
+            self.counter = 0
+            return {
+                "phone_usage": False,
+                "phone_detected_frames": self.counter,
+            }
+
         phone_detected = any(
             d.conf >= self.conf and (d.class_id == PHONE_CLASS_ID)
             for d in obj_detections
