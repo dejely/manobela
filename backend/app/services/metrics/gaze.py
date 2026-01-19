@@ -28,7 +28,6 @@ class GazeMetric(BaseMetric):
         update: Computes gaze metrics from frame data
         reset: Resets any internal state (no-op here)
         _eye_gaze_ratio: Computes gaze ratio for one eye
-        _average_point: Computes average point from given landmark indices
     """
 
     DEFAULT_HORIZONTAL_RANGE = (0.35, 0.65)
@@ -160,7 +159,9 @@ class GazeMetric(BaseMetric):
         left_corner, right_corner = corners
         upper_lid, lower_lid = lids
 
-        iris_center = average_point(landmarks, iris_indices)
+        # Filter and average only the iris landmarks
+        iris_points = [landmarks[i] for i in iris_indices]
+        iris_center = average_point(iris_points)
 
         width = landmarks[right_corner][0] - landmarks[left_corner][0]
         height = landmarks[lower_lid][1] - landmarks[upper_lid][1]
