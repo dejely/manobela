@@ -50,7 +50,10 @@ export const MediaStreamView = ({
 
   return (
     <View
-      style={[{ width: '100%', height: '100%', flex: 1 }, style]}
+      style={[
+        { width: '100%', height: '100%', flex: 1, borderRadius: 16, overflow: 'hidden' },
+        style,
+      ]}
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
         setViewDimensions({ width, height });
