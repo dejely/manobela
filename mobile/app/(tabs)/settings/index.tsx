@@ -21,7 +21,6 @@ import { Icon } from '@/components/ui/icon';
 const LINKS = {
   faq: 'https://github.com/popcorn-prophets/manobela/blob/main/README.md',
   issues: 'https://github.com/popcorn-prophets/manobela/issues',
-  legal: 'https://github.com/popcorn-prophets/manobela/blob/main/LICENSE',
   privacy: 'https://github.com/popcorn-prophets/manobela/blob/master/CODE_OF_CONDUCT.md',
   terms: 'https://github.com/popcorn-prophets/manobela/blob/master/LICENSE',
   dataProtection: 'https://github.com/popcorn-prophets/manobela/blob/master/CODE_OF_CONDUCT.md',
@@ -159,16 +158,12 @@ export default function SettingsScreen() {
 
       <Section title="About">
         <SettingRow icon={Info} label="App" value={aboutValue} />
-        <SettingRow
-          icon={Link2}
-          label="Legal & Compliance"
-          onPress={() => handleOpenLink(LINKS.legal)}
-        />
       </Section>
+
       <Section title = "API">
         <SettingRow
           icon={Globe}
-          label="API & WebSocket"
+          label="Configure URL"
           onPress={() => router.push('/settings/api-websocket')}
         />
       </Section>
