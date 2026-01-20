@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useCamera } from '@/hooks/useCamera';
 import { useMonitoringSession } from '@/hooks/useMonitoringSession';
+import { useAlerts } from '@/hooks/useAlerts';
 import { MediaStreamView } from '@/components/media-stream-view';
 import { ConnectionStatus } from '@/components/connection-status';
 import { Stack } from 'expo-router';
@@ -32,6 +33,11 @@ export default function MonitorScreen() {
   } = useMonitoringSession({
     url: wsUrl,
     stream: localStream,
+  });
+
+  useAlerts({
+    metrics: inferenceData?.metrics ?? null,
+    enabled: sessionState === 'active',
   });
 
   const handleToggle = useCallback(() => {
