@@ -25,13 +25,20 @@ const LABEL_MAPPINGS: Record<string, string> = {
   yaw_sustained: 'Yaw Sustained',
   pitch_sustained: 'Pitch Sustained',
   roll_sustained: 'Roll Sustained',
-  gaze_on_road: 'Gaze On Road',
+  gaze_alert: 'Gaze Alert',
+  gaze_rate: 'Gaze Rate',
   phone_usage: 'Phone Usage',
   phone_detected_frames: '# Frames Detected',
 } as const;
 
 /** Metric data keys that are percentages */
-const PERCENTAGE_KEYS = new Set(['perclos', 'yawn_progress', 'yawn_rate', 'phone_usage']);
+const PERCENTAGE_KEYS = new Set([
+  'perclos',
+  'yawn_progress',
+  'yawn_rate',
+  'gaze_rate',
+  'phone_usage',
+]);
 
 /** Formats a metric label with a human-readable name */
 const formatLabel = (key: string): string => {

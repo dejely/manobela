@@ -37,7 +37,8 @@ export const METRIC_DISPLAY_CONFIGS: Record<MetricId, MetricConfig> = {
   gaze: {
     icon: ({ size, color }) => <MaterialCommunityIcons name="bullseye" size={size} color={color} />,
     label: 'Gaze',
-    getWarningState: (data) => data?.gaze_on_road === false,
+    getWarningState: (data) => data?.gaze_alert,
+    getFillRatio: (data) => data?.gaze_rate,
   },
   phone_usage: {
     icon: ({ size, color }) => (

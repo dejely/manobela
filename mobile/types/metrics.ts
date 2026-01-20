@@ -37,7 +37,8 @@ export interface HeadPoseMetricOutput {
 }
 
 export interface GazeMetricOutput {
-  gaze_on_road: boolean | null;
+  gaze_alert: boolean;
+  gaze_rate: number;
 }
 
 export interface PhoneUsageMetricOutput {
