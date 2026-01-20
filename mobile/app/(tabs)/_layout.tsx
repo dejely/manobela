@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { ChartScatter, NotepadText, Aperture, Bolt, HardDriveUpload } from 'lucide-react-native';
+import { ChartScatter, NotepadText, Aperture, Bolt, Globe, HardDriveUpload } from 'lucide-react-native';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function TabLayout() {
@@ -56,8 +56,16 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Bolt color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="api-websocket"
+        options={{
+          title: 'API',
+          tabBarIcon: ({ color, size }) => <Globe color={color} size={size} />,
+        }}
+      />
       {/* Hidden compartments from tab navigation: */}
-      <Tabs.Screen name = "settings/api-websocket" options={{href: null, }} />
+
+
     </Tabs>
   );
 }

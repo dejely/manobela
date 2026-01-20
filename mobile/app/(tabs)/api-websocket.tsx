@@ -3,7 +3,7 @@ import { ScrollView, TextInput, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Stack } from 'expo-router';
-import { useSettings } from '../../../hooks/useSettings';
+import { useSettings } from '../../hooks/useSettings';
 import { validateApiBaseUrl, validateWsBaseUrl } from '@/lib/settings';
 
 export default function SettingsScreen() {
@@ -41,12 +41,12 @@ export default function SettingsScreen() {
       apiBaseUrl: trimmedApiBaseUrl,
       wsBaseUrl: trimmedWsBaseUrl,
     });
-    setStatusMessage('Settings saved.');
+    setStatusMessage('API Saved.');
   };
 
   return (
        <ScrollView className="flex-1 px-4 py-4">
-      <Stack.Screen options={{ title: 'Settings' }} />
+      <Stack.Screen options={{ title: 'API' }} />
 
       <View className="mb-6">
         <Text className="mb-2 text-base font-semibold">API Base URL</Text>
@@ -81,7 +81,7 @@ export default function SettingsScreen() {
       </View>
 
       <Button className="mb-3" disabled={isLoading} onPress={handleSave}>
-        <Text>{isLoading ? 'Loading...' : 'Save settings'}</Text>
+        <Text>{isLoading ? 'Loading...' : 'Save API'}</Text>
       </Button>
 
       {statusMessage ? (
