@@ -1,9 +1,10 @@
 import { useMemo, type ReactNode } from 'react';
-import { Linking, ScrollView, Switch, View } from 'react-native';
+import { Linking, ScrollView, View} from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { SettingRow } from '@/components/setting/settings-row';
 import { Section } from '@/components/setting/settings-section'
+import { Switch } from '@/components/ui/switch'
 
 import {
   Globe,
@@ -57,9 +58,11 @@ export default function SettingsScreen() {
           value={isDarkMode ? 'Dark' : 'Light'}
           rightElement={
             <Switch
-              accessibilityLabel="Toggle dark mode"
-              onValueChange={(value) => setColorScheme(value ? 'dark' : 'light')}
-              value={isDarkMode}
+            checked={isDarkMode}
+            onCheckedChange={(v) =>
+            setColorScheme(v ? 'dark' : 'light')
+            }
+            disabled = {false}
             />
           }
         />
@@ -79,7 +82,7 @@ export default function SettingsScreen() {
       </Section>
 
       <Section title="API">
-        <SettingRow icon={Globe} label="Configure URL" onPress={() => router.push('/settings/api-websocket')} />
+        <SettingRow icon={Globe} label="Configure URL" onPress={() => router.push('/settings/api-urls')} />
       </Section>
 
       <Section title="Legal & Compliance">

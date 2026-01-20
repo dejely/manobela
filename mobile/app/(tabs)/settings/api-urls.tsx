@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { useEffect, useState, useMemo } from 'react';
+import { ScrollView, TextInput, View, } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Stack } from 'expo-router';
@@ -18,11 +18,23 @@ export default function SettingsScreen() {
     setWsBaseUrl(settings.wsBaseUrl);
   }, [settings.apiBaseUrl, settings.wsBaseUrl]);
 
+  const hasChange = useMemo(() => {
+    // Trim them down and ensure its not the same or an invalid input
+    return apiBaseUrl.trim() !== settings.apiBaseUrl || wsBaseUrl.trim () !== settings.wsBaseUrl;
+  }, [apiBaseUrl, wsBaseUrl, settings.apiBaseUrl, settings.wsBaseUrl]);
+
+  const restartApp = async () => {
+    const trimmedApiBaseUrl = apiBaseUrl.trim();
+    const trimmedWsBaseUrl = wsBaseUrl.trim();
+  }
+
   const handleSave = async () => {
     const trimmedApiBaseUrl = apiBaseUrl.trim();
     const trimmedWsBaseUrl = wsBaseUrl.trim();
+
     const nextErrors: { apiBaseUrl?: string; wsBaseUrl?: string } = {};
 
+    // --- GUARDS ---
     if (!validateApiBaseUrl(trimmedApiBaseUrl)) {
       nextErrors.apiBaseUrl = 'Enter a valid http(s) URL.';
     }
@@ -36,13 +48,18 @@ export default function SettingsScreen() {
       setStatusMessage('');
       return;
     }
+    // --------
 
     await saveSettings({
       apiBaseUrl: trimmedApiBaseUrl,
       wsBaseUrl: trimmedWsBaseUrl,
     });
-    setStatusMessage('API Saved.');
+    setStatusMessage('API URLs saved.');
   };
+
+  // if (changed) {
+  //   setRestartRequired(true);
+  // }
 
   return (
        <ScrollView className="flex-1 px-4 py-4">
