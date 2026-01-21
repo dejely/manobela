@@ -10,6 +10,7 @@ from aiortc import (
 )
 from aiortc.sdp import candidate_from_sdp
 
+from app.core.config import settings
 from app.models.webrtc import ICECandidateMessage, MessageType, SDPMessage
 from app.services.connection_manager import ConnectionManager
 from app.services.ice_servers import get_ice_servers
@@ -37,15 +38,45 @@ async def create_peer_connection(
 
     stop_processing = asyncio.Event()
 
+    disconnect_close_task: asyncio.Task | None = None
+
+    async def schedule_disconnect_close() -> None:
+        try:
+            await asyncio.sleep(settings.session_ttl_seconds)
+        except asyncio.CancelledError:
+            return
+        if (
+            pc.connectionState == "disconnected"
+            and not connection_manager.is_session_valid(
+                client_id, settings.session_ttl_seconds
+            )
+        ):
+            stop_processing.set()
+            await connection_manager.close_session(client_id)
+
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
+        nonlocal disconnect_close_task
         # Log connection state changes
         logger.info("Connection state for %s: %s", client_id, pc.connectionState)
 
-        # Close peer connection if it's in a failed or closed state
-        if pc.connectionState in ("failed", "closed", "disconnected"):
+        if pc.connectionState in ("failed", "closed"):
+            if disconnect_close_task and not disconnect_close_task.done():
+                disconnect_close_task.cancel()
             stop_processing.set()
             await connection_manager.close_session(client_id)
+            return
+
+        if pc.connectionState == "disconnected":
+            if not disconnect_close_task or disconnect_close_task.done():
+                disconnect_close_task = asyncio.create_task(
+                    schedule_disconnect_close()
+                )
+            return
+
+        if pc.connectionState in ("connecting", "connected"):
+            if disconnect_close_task and not disconnect_close_task.done():
+                disconnect_close_task.cancel()
 
     @pc.on("track")
     def on_track(track):
