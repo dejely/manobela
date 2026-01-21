@@ -15,11 +15,11 @@ const getMetric = <K extends keyof MetricsOutput>(
 
 export const ALERT_CONFIGS: AlertConfig[] = [
   {
-    id: 'no_face',
+    id: 'face_missing',
     message: 'No face detected. Please reposition yourself.',
     priority: AlertPriority.CRITICAL,
     cooldownMs: 8000,
-    condition: (m: MetricsOutput) => !m.face_detected,
+    condition: (m: MetricsOutput) => !!m.face_missing,
   },
   {
     id: 'eye_closure_perclos',

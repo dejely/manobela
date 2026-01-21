@@ -107,10 +107,10 @@ export const MediaStreamView = ({
         <View className="h-9 w-9 items-center justify-center">
           {sessionState !== 'active' ? (
             <Meh size={24} color="white" />
-          ) : inferenceData?.metrics?.face_detected ? (
-            <ScanFace size={24} color="white" />
-          ) : (
+          ) : inferenceData?.metrics?.face_missing ? (
             <Frown size={24} color={colors.destructive} />
+          ) : (
+            <ScanFace size={24} color="white" />
           )}
         </View>
 

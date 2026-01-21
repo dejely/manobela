@@ -2,7 +2,7 @@
  * Metrics output
  */
 export interface MetricsOutput {
-  face_detected: boolean;
+  face_missing: boolean;
   eye_closure: EyeClosureMetricOutput;
   yawn: YawnMetricOutput;
   head_pose: HeadPoseMetricOutput;
