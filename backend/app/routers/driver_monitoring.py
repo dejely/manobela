@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.core.config import settings
 from app.core.dependencies import (
     ConnectionManagerDep,
     ConnectionManagerWsDep,
@@ -33,10 +34,42 @@ async def driver_monitoring(
     """
     WebSocket endpoint that handles WebRTC signaling messages for a single client.
     """
+    await websocket.accept()
+    await connection_manager.cleanup_expired_sessions(settings.session_ttl_seconds)
 
-    # Generate a unique identifier for this client session
-    client_id = str(uuid.uuid4())
-    await connection_manager.connect(websocket, client_id)
+    requested_client_id = websocket.query_params.get("client_id")
+    initial_message: dict | None = None
+    client_id: str | None = None
+
+    if requested_client_id and connection_manager.is_session_valid(
+        requested_client_id, settings.session_ttl_seconds
+    ):
+        client_id = requested_client_id
+
+    if client_id is None:
+        try:
+            raw = await websocket.receive_text()
+            message = json.loads(raw)
+            initial_message = message
+            requested_client_id = message.get("client_id")
+            if requested_client_id and connection_manager.is_session_valid(
+                requested_client_id, settings.session_ttl_seconds
+            ):
+                client_id = requested_client_id
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON on initial message: %s", raw)
+        except WebSocketDisconnect:
+            logger.info("Client disconnected before handshake completed")
+            return
+
+    if client_id is None:
+        client_id = str(uuid.uuid4())
+
+    existing_ws = connection_manager.active_connections.get(client_id)
+    if existing_ws and existing_ws is not websocket:
+        await existing_ws.close()
+
+    connection_manager.register_websocket(websocket, client_id)
 
     try:
         # Initial handshake message so the client knows its assigned ID
@@ -49,19 +82,11 @@ async def driver_monitoring(
             },
         )
 
-        while True:
-            # Receive a message from the client
-            raw = await websocket.receive_text()
-            try:
-                message = json.loads(raw)
-            except json.JSONDecodeError:
-                logger.warning("Invalid JSON from %s: %s", client_id, raw)
-                continue
-
+        async def handle_message(message: dict) -> None:
+            connection_manager.touch(client_id)
             msg_type = message.get("type")
             logger.info("Received %s from %s", msg_type, client_id)
 
-            # Route signaling messages based on type
             if msg_type == MessageType.OFFER.value:
                 await handle_offer(
                     client_id,
@@ -80,6 +105,21 @@ async def driver_monitoring(
             else:
                 logger.warning("Unknown message type from %s: %s", client_id, msg_type)
 
+        if initial_message:
+            await handle_message(initial_message)
+
+        while True:
+            # Receive a message from the client
+            raw = await websocket.receive_text()
+            try:
+                message = json.loads(raw)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON from %s: %s", client_id, raw)
+                continue
+
+            connection_manager.touch(client_id)
+            await handle_message(message)
+
     except WebSocketDisconnect:
         logger.info("Client %s disconnected", client_id)
 
@@ -87,10 +127,8 @@ async def driver_monitoring(
         logger.exception("WebSocket error for %s: %s", client_id, exc)
 
     finally:
-        # Ensure peer connection and background tasks are cleaned up
-        pc = connection_manager.disconnect(client_id)
-        if pc:
-            await pc.close()
+        if client_id:
+            connection_manager.detach_websocket(client_id)
 
 
 @router.get("/connections")
@@ -105,4 +143,5 @@ async def connections(
         "peer_connections": len(connection_manager.peer_connections),
         "data_channels": len(connection_manager.data_channels),
         "frame_tasks": len(connection_manager.frame_tasks),
+        "sessions": len(connection_manager.sessions),
     }

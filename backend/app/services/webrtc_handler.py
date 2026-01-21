@@ -33,7 +33,7 @@ async def create_peer_connection(
     )
 
     pc = RTCPeerConnection(rtc_config)
-    connection_manager.peer_connections[client_id] = pc
+    connection_manager.register_peer_connection(client_id, pc)
 
     stop_processing = asyncio.Event()
 
@@ -45,9 +45,7 @@ async def create_peer_connection(
         # Close peer connection if it's in a failed or closed state
         if pc.connectionState in ("failed", "closed", "disconnected"):
             stop_processing.set()
-            removed_pc = connection_manager.disconnect(client_id)
-            if removed_pc:
-                await removed_pc.close()
+            await connection_manager.close_session(client_id)
 
     @pc.on("track")
     def on_track(track):
@@ -66,14 +64,14 @@ async def create_peer_connection(
                     stop_processing,
                 )
             )
-            connection_manager.frame_tasks[client_id] = task
+            connection_manager.register_frame_task(client_id, task)
 
     @pc.on("datachannel")
     def on_datachannel(channel):
         logger.info("Data channel established: %s", channel.label)
 
         # Register the channel
-        connection_manager.data_channels[client_id] = channel
+        connection_manager.register_data_channel(client_id, channel)
 
         @channel.on("message")
         def on_message(message):
