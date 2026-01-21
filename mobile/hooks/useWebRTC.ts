@@ -6,14 +6,12 @@ import {
   SignalingTransport,
   TransportStatus,
 } from '@/types/webrtc';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { MediaStream, RTCPeerConnection } from 'react-native-webrtc';
 import { WebSocketTransport } from '@/services/signaling/web-socket-transport';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
 import { fetchIceServers } from '@/services/ice-servers';
 import { mapNetworkErrorMessage } from '@/services/network-error';
-import NetInfo from '@react-native-community/netinfo';
-import { BackHandler, Platform } from 'react-native';
 
 interface UseWebRTCProps {
   // WebSocket signaling endpoint
@@ -31,7 +29,7 @@ interface UseWebRTCReturn {
   connectionStatus: RTCPeerConnectionState;
   clientId: string | null;
   error: string | null;
-  errorDetails: string | null; // implement in return
+  errorDetails: string | null // implement in return
 
   // Starts signaling + peer connection negotiation
   startConnection: () => void;
@@ -64,9 +62,7 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   // Fan-out handler registries
   const signalingHandlers = useRef<((msg: SignalingMessage) => void)[]>([]);
   const dataChannelHandlers = useRef<((msg: any) => void)[]>([]);
-  const wasOfflineRef = useRef(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const isOfflineRef = useRef(false);
+
   // Last fatal error encountered anywhere in the stack
   const [error, setError] = useState<string | null>(null);
 
@@ -75,20 +71,17 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   const setErrorState = useCallback((message: string, rawMessage?: string | null) => {
     const normalizedMessage = message || null;
     setError(normalizedMessage);
-    setErrorDetails(normalizedMessage ? (rawMessage ?? message) : null);
+    setErrorDetails(normalizedMessage ? rawMessage ?? message : null);
   }, []);
 
   // Thin wrapper to centralize signaling send
-  const sendSignalingMessage = useCallback(
-    (msg: SignalingMessage) => {
-      try {
-        transportRef.current?.send(msg);
-      } catch (err: any) {
-        setErrorState(err.message || 'Failed to send signaling message', err?.cause?.toString?.());
-      }
-    },
-    [setErrorState]
-  );
+  const sendSignalingMessage = useCallback((msg: SignalingMessage) => {
+    try {
+      transportRef.current?.send(msg);
+    } catch (err: any) {
+      setErrorState(err.message || 'Failed to send signaling message', err?.cause?.toString?.());
+    }
+  }, [setErrorState]);
   // ------ Specified Error Block end ------
 
   // Allow external subscribers to observe raw signaling traffic
@@ -97,70 +90,64 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   }, []);
 
   // Core signaling message dispatcher
-  const handleSignalingMessage = useCallback(
-    async (msg: SignalingMessage) => {
-      try {
-        if (msg.type === MessageType.WELCOME) {
-          // Server-assigned client identifier
-          setClientId(msg.client_id);
-          console.log('Received client ID:', msg.client_id);
-        } else if (msg.type === MessageType.ANSWER) {
-          // Remote SDP answer completes offer/answer handshake
-          const pc = pcRef.current;
-          if (!pc) {
-            console.error('No peer connection available for answer');
-            return;
-          }
-
-          const sdpMsg = msg as SDPMessage;
-          console.log('Received answer, setting remote description');
-
-          await pc.setRemoteDescription({
-            type: sdpMsg.sdpType as RTCSdpType,
-            sdp: sdpMsg.sdp,
-          });
-
-          console.log('Remote description set successfully');
-        } else if (msg.type === MessageType.ICE_CANDIDATE) {
-          // Trickle ICE candidate from remote peer
-          const pc = pcRef.current;
-          if (!pc) {
-            console.error('No peer connection available for ICE candidate');
-            return;
-          }
-
-          const iceMsg = msg as ICECandidateMessage;
-
-          if (iceMsg.candidate) {
-            await pc.addIceCandidate({
-              candidate: iceMsg.candidate.candidate,
-              sdpMid: iceMsg.candidate.sdpMid,
-              sdpMLineIndex: iceMsg.candidate.sdpMLineIndex,
-            });
-            console.log('Added ICE candidate');
-          }
+  const handleSignalingMessage = useCallback(async (msg: SignalingMessage) => {
+    try {
+      if (msg.type === MessageType.WELCOME) {
+        // Server-assigned client identifier
+        setClientId(msg.client_id);
+        console.log('Received client ID:', msg.client_id);
+      } else if (msg.type === MessageType.ANSWER) {
+        // Remote SDP answer completes offer/answer handshake
+        const pc = pcRef.current;
+        if (!pc) {
+          console.error('No peer connection available for answer');
+          return;
         }
-      } catch (err: any) {
-        console.error('Error handling signaling message:', err);
-        setErrorState(`Signaling error: ${err.message}`, err?.cause?.toString?.());
-      }
 
-      signalingHandlers.current.forEach((cb) => cb(msg));
-    },
-    [setErrorState]
-  );
+        const sdpMsg = msg as SDPMessage;
+        console.log('Received answer, setting remote description');
+
+        await pc.setRemoteDescription({
+          type: sdpMsg.sdpType as RTCSdpType,
+          sdp: sdpMsg.sdp,
+        });
+
+        console.log('Remote description set successfully');
+      } else if (msg.type === MessageType.ICE_CANDIDATE) {
+        // Trickle ICE candidate from remote peer
+        const pc = pcRef.current;
+        if (!pc) {
+          console.error('No peer connection available for ICE candidate');
+          return;
+        }
+
+        const iceMsg = msg as ICECandidateMessage;
+
+        if (iceMsg.candidate) {
+          await pc.addIceCandidate({
+            candidate: iceMsg.candidate.candidate,
+            sdpMid: iceMsg.candidate.sdpMid,
+            sdpMLineIndex: iceMsg.candidate.sdpMLineIndex,
+          });
+          console.log('Added ICE candidate');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error handling signaling message:', err);
+      setErrorState(`Signaling error: ${err.message}`, err?.cause?.toString?.());
+    }
+
+    signalingHandlers.current.forEach((cb) => cb(msg));
+  }, [setErrorState]);
 
   // Serialize and send JSON messages over the RTCDataChannel
-  const sendDataMessage = useCallback(
-    (msg: any) => {
-      try {
-        dataChannelRef.current?.send(JSON.stringify(msg));
-      } catch (err: any) {
-        setErrorState(err.message || 'Failed to send data message', err?.cause?.toString?.());
-      }
-    },
-    [setErrorState]
-  );
+  const sendDataMessage = useCallback((msg: any) => {
+    try {
+      dataChannelRef.current?.send(JSON.stringify(msg));
+    } catch (err: any) {
+      setErrorState(err.message || 'Failed to send data message', err?.cause?.toString?.());
+    }
+  }, [setErrorState]);
 
   // Allow external subscribers to observe raw data channel traffic
   const onDataMessage = useCallback((handler: (msg: any) => void) => {
@@ -168,17 +155,14 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   }, []);
 
   // Core data channel message dispatcher
-  const handleDataMessage = useCallback(
-    async (msg: any) => {
-      try {
-        dataChannelHandlers.current.forEach((cb) => cb(msg));
-      } catch (err: any) {
-        console.error('Error handling data message:', err);
-        setErrorState(`Data error: ${err.message}`, err?.cause?.toString?.());
-      }
-    },
-    [setErrorState]
-  );
+  const handleDataMessage = useCallback(async (msg: any) => {
+    try {
+      dataChannelHandlers.current.forEach((cb) => cb(msg));
+    } catch (err: any) {
+      console.error('Error handling data message:', err);
+      setErrorState(`Data error: ${err.message}`, err?.cause?.toString?.());
+    }
+  }, [setErrorState]);
 
   /**
    * Initializes WebSocket-based signaling.
@@ -288,14 +272,8 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
    */
   const startConnection = useCallback(async () => {
     try {
-      if (isOfflineRef.current) {
-        setConnectionStatus('closed');
-        setErrorState(mapNetworkErrorMessage('no internet'), 'No internet connection');
-        return;
-      }
       // Ensure a media stream is available
       if (!stream) {
-        setConnectionStatus('closed');
         setErrorState('No media stream available');
         return;
       }
@@ -303,16 +281,10 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       // Reset status and error
       setErrorState('');
       setConnectionStatus('connecting');
+      console.log('Starting WebRTC connection...');
 
       // Initialize signaling transport first
       await initTransport();
-
-      if (isOfflineRef.current) {
-        cleanup();
-        setConnectionStatus('closed');
-        setErrorState(mapNetworkErrorMessage('no internet'), 'No internet connection');
-        return;
-      }
 
       const rtcConfig: RTCConfiguration = {
         ...(await fetchIceServers()),
@@ -343,7 +315,7 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       console.log('Sending offer...');
       const msg: SDPMessage = {
         type: MessageType.OFFER,
-        sdp: offer.sdp ?? '',
+        sdp: offer.sdp!,
         sdpType: offer.type,
       };
       sendSignalingMessage(msg);
@@ -355,16 +327,12 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
 
       const friendly = mapNetworkErrorMessage(raw);
       setErrorState(friendly, raw);
-      setConnectionStatus('closed');
+      setConnectionStatus('failed');
     }
-  }, [
-    stream,
-    initPeerConnection,
-    initTransport,
-    initDataChannel,
-    sendSignalingMessage,
-    setErrorState,
-  ]);
+
+
+
+  }, [stream, initPeerConnection, initTransport, initDataChannel, sendSignalingMessage, setErrorState]);
 
   /**
    * Full teardown.
@@ -387,54 +355,6 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   }, [setErrorState]);
 
   const transportStatus: TransportStatus = transportRef.current?.status ?? 'closed';
-  const hasExitedRef = useRef(false);
-
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      if (isOfflineRef.current) {
-        setConnectionStatus('closed');
-        setErrorState(mapNetworkErrorMessage('no internet'), 'No internet connection');
-        return;
-      }
-      const isOffline = state.isConnected === false || state.isInternetReachable === false;
-      if (isOffline && !wasOfflineRef.current) {
-        wasOfflineRef.current = isOffline;
-        setIsOffline(isOffline);
-
-        if (isOffline && !wasOfflineRef.current) {
-          wasOfflineRef.current = true;
-          // FORCE UI to go back to idle/closed immediately
-          setConnectionStatus('closed');
-          setErrorState(mapNetworkErrorMessage('no internet'), 'No internet connection');
-        }
-
-        transportRef.current?.disconnect();
-        transportRef.current = null;
-        const pc = pcRef.current;
-        if (pc) {
-          try {
-            pc.close();
-          } catch {}
-          pcRef.current = null;
-        }
-
-        // LAST resor: exit app on android
-        if (Platform.OS == 'android' && !hasExitedRef.current) {
-          hasExitedRef.current = true;
-        }
-
-        setTimeout(() => {
-          BackHandler.exitApp();
-        }, 2500); // Close app within 2.5s
-      }
-      if (!isOffline && wasOfflineRef.current) {
-        wasOfflineRef.current = false;
-        hasExitedRef.current = false;
-      }
-    });
-
-    return () => unsubscribe();
-  }, [setErrorState]);
 
   return {
     transportStatus,
@@ -450,3 +370,7 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
     onDataMessage,
   };
 };
+function getErrorText(arg0: any) {
+  throw new Error('Function not implemented.');
+}
+
