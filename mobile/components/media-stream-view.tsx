@@ -7,7 +7,7 @@ import { ObjectDetectionOverlay } from './object-detection-overlay';
 import { InferenceData } from '@/types/inference';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, Frown, Meh, ScanFace } from 'lucide-react-native';
 
 type MediaStreamViewProps = {
   stream: MediaStream | null;
@@ -101,28 +101,39 @@ export const MediaStreamView = ({
         />
       </View>
 
-      {/* Overlay toggle */}
-      <View className="absolute right-3 top-3">
-        <Pressable
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={showOverlay ? 'Hide overlays' : 'Show overlays'}
-          onPress={() => setShowOverlay((v) => !v)}
-          className="h-9 w-9 items-center justify-center">
-          {showOverlay ? <Eye size={20} color="#fff" /> : <EyeOff size={20} color="#fff" />}
-        </Pressable>
-      </View>
-
-      {/* Overlay resolution */}
-      {inferenceData?.resolution && (
-        <View className="absolute left-3 top-3 z-10 items-center">
-          <View className="rounded-full bg-black/50 px-2 py-1">
-            <Text className="text-xs text-white">
-              {inferenceData.resolution.width}x{inferenceData.resolution.height}
-            </Text>
-          </View>
+      {/* Top overlay */}
+      <View className="absolute left-0 right-0 top-3 z-10 flex-row items-center justify-between px-3">
+        <View className="h-9 w-9 items-center justify-center">
+          {sessionState !== 'active' ? (
+            <Meh size={24} color="white" />
+          ) : inferenceData?.metrics?.face_detected ? (
+            <ScanFace size={24} color="white" />
+          ) : (
+            <Frown size={24} color="white" />
+          )}
         </View>
-      )}
+
+        <View className="items-center justify-center">
+          {inferenceData?.resolution && (
+            <View className="rounded-full bg-black/40 px-2 py-1">
+              <Text className="text-xs text-white">
+                {inferenceData.resolution.width}x{inferenceData.resolution.height}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View className="h-9 w-9 items-center justify-center">
+          <Pressable
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={showOverlay ? 'Hide overlays' : 'Show overlays'}
+            onPress={() => setShowOverlay((v) => !v)}
+            className="h-9 w-9 items-center justify-center">
+            {showOverlay ? <Eye size={24} color="white" /> : <EyeOff size={24} color="white" />}
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 };

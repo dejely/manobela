@@ -18,6 +18,7 @@ class MetricsOutput(TypedDict, total=False):
     Union of all metric outputs.
     """
 
+    face_detected: bool
     eye_closure: EyeClosureMetricOutput
     yawn: YawnMetricOutput
     head_pose: HeadPoseMetricOutput
@@ -44,7 +45,11 @@ class MetricManager:
         """
         Update all metrics with the current frame and return combined results.
         """
-        results: MetricsOutput = {}
+        face_detected = context.face_landmarks is not None and len(context.face_landmarks) > 0
+
+        results: MetricsOutput = {
+            "face_detected": face_detected,
+        }
 
         for metric_id, metric in self.metrics.items():
             try:

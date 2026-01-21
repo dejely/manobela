@@ -3,6 +3,13 @@ import { MetricsOutput } from '@/types/metrics';
 
 export const ALERT_CONFIGS: AlertConfig[] = [
   {
+    id: 'no_face',
+    message: 'No face detected',
+    priority: AlertPriority.CRITICAL,
+    cooldownMs: 10000,
+    condition: (m: MetricsOutput) => !m.face_detected,
+  },
+  {
     id: 'phone_usage',
     message: 'Put down your phone',
     priority: AlertPriority.CRITICAL,
