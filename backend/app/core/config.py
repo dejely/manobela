@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # Video processing
     target_fps: int = 15
 
+    # WebSocket session registry
+    session_ttl_seconds: int = 300
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
