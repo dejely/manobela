@@ -69,19 +69,25 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
 
   const pendingWelcomeResolver = useRef<((id: string) => void) | null>(null);
   const lastWelcomeId = useRef<string | null>(null);
+  const hasLoadedCachedId = useRef(false);
 
   const CLIENT_ID_STORAGE_KEY = 'webrtc-client-id';
 
   useEffect(() => {
     const loadCachedClientId = async () => {
       try {
+        if (hasLoadedCachedId.current) {
+          return;
+        }
         const stored = await AsyncStorage.getItem(CLIENT_ID_STORAGE_KEY);
-        if (stored) {
+        if (stored && !cachedClientIdRef.current) {
           setCachedClientId(stored);
           cachedClientIdRef.current = stored;
         }
       } catch (err) {
         console.warn('Failed to load cached WebRTC client ID:', err);
+      } finally {
+        hasLoadedCachedId.current = true;
       }
     };
 

@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import cv2
+from aiortc.mediastreams import MediaStreamError
 
 from app.core.config import settings
 from app.models.inference import InferenceData, Resolution
@@ -207,6 +208,10 @@ async def process_video_frames(
                         processed_frames,
                         fps,
                     )
+
+            except MediaStreamError:
+                logger.info("Media stream ended for %s", client_id)
+                break
 
             except asyncio.CancelledError:
                 logger.info("Frame processing cancelled for %s", client_id)

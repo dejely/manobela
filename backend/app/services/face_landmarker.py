@@ -65,6 +65,7 @@ class MediapipeFaceLandmarker(FaceLandmarker):
             RuntimeError: If model loading fails.
         """
         self._lock = threading.Lock()
+        self._last_timestamp_ms = 0
 
         try:
             base_options = python.BaseOptions(model_asset_path=str(model_path))
@@ -104,9 +105,12 @@ class MediapipeFaceLandmarker(FaceLandmarker):
             data=rgb_frame,
         )
 
-        timestamp_ms = int(time.time() * 1000)
+        timestamp_ms = int(time.monotonic() * 1000)
 
         with self._lock:
+            if timestamp_ms <= self._last_timestamp_ms:
+                timestamp_ms = self._last_timestamp_ms + 1
+            self._last_timestamp_ms = timestamp_ms
             raw_result = self._landmarker.detect_for_video(
                 mp_image,
                 timestamp_ms,
