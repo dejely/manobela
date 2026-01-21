@@ -11,6 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class YawnMetricOutput(MetricOutputBase):
+    """
+    Output schema for the yawn metric.
+
+    Attributes:
+        mar: Mouth Aspect Ratio (MAR) value for the current frame, if available.
+        yawning: Whether the mouth has been continuously open for at least min_yawn_duration_sec.
+        yawn_sustained: Fraction of time the mouth has been continuously open.
+        yawn_count: Number of yawns detected in the current frame.
+    """
     mar: Optional[float]
     yawning: bool
     yawn_sustained: float
@@ -19,7 +28,7 @@ class YawnMetricOutput(MetricOutputBase):
 
 class YawnMetric(BaseMetric):
     """
-    Yawn detection metric using Mouth Aspect Ratio (MAR).
+    Yawn metric using MAR.
     """
 
     DEFAULT_MAR_THRESHOLD = 0.6

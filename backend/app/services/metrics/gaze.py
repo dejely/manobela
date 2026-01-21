@@ -14,13 +14,20 @@ logger = logging.getLogger(__name__)
 
 
 class GazeMetricOutput(MetricOutputBase):
+    """
+    Output schema for the gaze metric.
+
+    Attributes:
+        gaze_alert: Whether gaze has been outside the configured range for at least min_sustained_sec.
+        gaze_sustained: Fraction of time the gaze has been continuous.
+    """
     gaze_alert: bool
     gaze_sustained: float
 
 
 class GazeMetric(BaseMetric):
     """
-    Computes whether the user's gaze is within an acceptable region.
+    Gaze metric using left and right eye gaze ratios.
     """
 
     DEFAULT_HORIZONTAL_RANGE = (0.35, 0.65)

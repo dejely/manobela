@@ -6,6 +6,13 @@ PHONE_CLASS_ID = 67  # COCO
 
 
 class PhoneUsageMetricOutput(MetricOutputBase):
+    """
+    Output schema for the phone usage metric.
+
+    Attributes:
+        phone_usage: Whether phone detection has been sustained for at least min_usage_duration_sec.
+        phone_usage_sustained: Fraction of time the phone has been continuously detected.
+    """
     phone_usage: bool
     phone_usage_sustained: float
 

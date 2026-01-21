@@ -10,6 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class HeadPoseMetricOutput(MetricOutputBase):
+    """
+    Output schema for the head pose metric.
+
+    Attributes:
+        yaw_alert: Whether the yaw angle deviates from the configured threshold.
+        pitch_alert: Whether the pitch angle deviates from the configured threshold.
+        roll_alert: Whether the roll angle deviates from the configured threshold.
+        yaw: Yaw angle (in degrees) for the current frame, if available.
+        pitch: Pitch angle (in degrees) for the current frame, if available.
+        roll: Roll angle (in degrees) for the current frame, if available.
+        head_pose_sustained: Fraction of the minimum sustained duration that has elapsed for the most deviant axis.
+    """
     yaw_alert: bool
     pitch_alert: bool
     roll_alert: bool
@@ -25,8 +37,6 @@ class HeadPoseMetric(BaseMetric):
     Detects when head is turned away from forward-facing position.
 
     This implementation uses only 2D (x, y) landmarks.
-
-    Note: Pitch is less accurate because only 2D landmarks are used.
     """
 
     # Default thresholds in degrees

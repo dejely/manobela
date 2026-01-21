@@ -12,6 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 class EyeClosureMetricOutput(MetricOutputBase):
+    """Output schema for the eye closure metric.
+
+    Attributes:
+        ear: Eye Aspect Ratio (EAR) value for the current frame, if available.
+        eye_closed: Whether the eyes are considered closed in the current frame.
+        eye_closed_sustained: Fraction of the minimum required eye-closed duration that has .q
+        perclos: Percentage of eye closure over a time window (PERCLOS), if available.
+        perclos_alert: Whether the PERCLOS value exceeds the configured alert threshold.
+    """
+
     ear: Optional[float]
     eye_closed: bool
     eye_closed_sustained: float
@@ -21,7 +31,7 @@ class EyeClosureMetricOutput(MetricOutputBase):
 
 class EyeClosureMetric(BaseMetric):
     """
-    Eye closure metric using EAR per frame and PERCLOS over a rolling window.
+    Eye closure metric using EAR and PERCLOS.
     """
 
     DEFAULT_EAR_THRESHOLD = 0.15
