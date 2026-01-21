@@ -40,9 +40,9 @@ class HeadPoseMetric(BaseMetric):
     """
 
     # Default thresholds in degrees
-    DEFAULT_YAW_THRESHOLD = 50.0
-    DEFAULT_PITCH_THRESHOLD = 10.0
-    DEFAULT_ROLL_THRESHOLD = 30.0
+    DEFAULT_YAW_THRESHOLD = 45.0
+    DEFAULT_PITCH_THRESHOLD = 20.0
+    DEFAULT_ROLL_THRESHOLD = 25.0
 
     DEFAULT_MIN_SUSTAINED_SEC = 0.5
 

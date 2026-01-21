@@ -22,7 +22,7 @@ class PhoneUsageMetric(BaseMetric):
     Metric to detect phone usage.
     """
 
-    DEFAULT_CONF = 0.3
+    DEFAULT_CONF = 0.5
     DEFAULT_MIN_USAGE_DURATION_SEC = 0.5
 
     def __init__(

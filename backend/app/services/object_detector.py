@@ -40,7 +40,7 @@ class ObjectDetector(Protocol):
         self,
         img: np.ndarray,
         normalize: bool = True,
-        conf_threshold: float = 0.3,
+        conf_threshold: float = 0.4,
         iou_threshold: float = 0.5,
     ) -> list[ObjectDetection]: ...
 
