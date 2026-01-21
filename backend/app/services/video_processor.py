@@ -20,7 +20,7 @@ from app.services.face_landmarks import ESSENTIAL_LANDMARKS
 from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.metric_manager import MetricManager
 from app.services.object_detector import ObjectDetector
-from app.services.smoother import Smoother
+from app.services.smoother import SequenceSmoother
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def process_video_frame(
     face_landmarker: FaceLandmarker,
     object_detector: ObjectDetector,
     metric_manager: MetricManager,
-    smoother: Smoother,
+    smoother: SequenceSmoother,
 ) -> InferenceData:
     """
     Process a single video frame.
@@ -94,7 +94,7 @@ async def process_video_frames(
     start_time = time.perf_counter()
     last_process_time = time.perf_counter()
     metric_manager = MetricManager()
-    smoother = Smoother()
+    smoother = SequenceSmoother(alpha=0.8, max_missing=5)
 
     data_channel_retries = 0
     MAX_DATA_CHANNEL_RETRIES = 10

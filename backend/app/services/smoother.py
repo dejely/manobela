@@ -1,63 +1,94 @@
-from typing import Optional, Sequence, Union
+from __future__ import annotations
 
-Numeric = Union[float, int]
+from typing import Optional, Sequence
 
 
-class Smoother:
+class _BaseSmoother:
     """
-    Exponential moving average smoother for numeric sequences.
-    Can be used for any numeric time series.
+    Shared EMA logic for smoothers.
+
+    Not intended for direct use.
+    """
+
+    def __init__(self, alpha: float, max_missing: int):
+        if not (0.0 < alpha <= 1.0):
+            raise ValueError("alpha must be in the range (0, 1].")
+        if max_missing < 0:
+            raise ValueError("max_missing must be non-negative.")
+
+        self.alpha = alpha
+        self.max_missing = max_missing
+        self._missing_count = 0
+
+    def _handle_missing(self, last_value):
+        self._missing_count += 1
+        if self._missing_count <= self.max_missing:
+            return last_value
+        self._missing_count = 0
+        return None
+
+    def reset(self) -> None:
+        self._missing_count = 0
+
+
+class ScalarSmoother(_BaseSmoother):
+    """
+    EMA smoother for scalar float values.
     """
 
     def __init__(self, alpha: float = 0.3, max_missing: int = 5):
-        """
-        Args:
-            alpha: Smoothing factor (0-1). Lower = smoother but more lag, higher = more responsive.
-            max_missing: Maximum consecutive missing inputs to interpolate.
-        """
-        self.alpha = alpha
-        self.max_missing = max_missing
-        self.last_value: Optional[list[float]] = None  # Last smoothed value
-        self.missing_count = 0  # Counter for consecutive missing inputs
+        super().__init__(alpha, max_missing)
+        self._last_value: Optional[float] = None
 
-    def update(self, new_value: Optional[Sequence[Numeric]]) -> Optional[list[float]]:
-        """
-        Update with a new numeric sequence and return smoothed result.
+    def update(self, new_value: Optional[float]) -> Optional[float]:
+        if new_value is None:
+            self._last_value = self._handle_missing(self._last_value)
+            return self._last_value
 
-        Args:
-            new_value: Current numeric sequence or None if missing.
+        self._missing_count = 0
 
-        Returns:
-            Smoothed numeric sequence or None if missing for too long.
-        """
-        if new_value is not None:
-            # Value is present, update state
-            self.missing_count = 0
-            new_list = list(map(float, new_value))  # Ensure float internally
-            if self.last_value is None:
-                self.last_value = new_list
-                return new_list
+        if self._last_value is None:
+            self._last_value = new_value
+            return new_value
 
-            smoothed = [
-                self.alpha * new_list[i] + (1 - self.alpha) * self.last_value[i]
-                for i in range(len(new_list))
-            ]
-            self.last_value = smoothed
-            return smoothed
+        smoothed = self.alpha * new_value + (1 - self.alpha) * self._last_value
+        self._last_value = smoothed
+        return smoothed
 
-        else:
-            # Value is missing, update counter
-            self.missing_count += 1
+    def reset(self) -> None:
+        super().reset()
+        self._last_value = None
 
-            if self.missing_count <= self.max_missing:
-                # Keep showing last known value
-                return self.last_value
-            else:
-                # Value lost for too long, reset
-                self.last_value = None
-                return None
 
-    def reset(self):
-        """Reset the smoother state."""
-        self.last_value = None
-        self.missing_count = 0
+class SequenceSmoother(_BaseSmoother):
+    """
+    EMA smoother for fixed-length numeric sequences.
+    """
+
+    def __init__(self, alpha: float = 0.3, max_missing: int = 5):
+        super().__init__(alpha, max_missing)
+        self._last_value: Optional[list[float]] = None
+
+    def update(self, new_value: Optional[Sequence[float]]) -> Optional[list[float]]:
+        if new_value is None:
+            self._last_value = self._handle_missing(self._last_value)
+            return self._last_value
+
+        self._missing_count = 0
+        new_list = list(map(float, new_value))
+
+        if self._last_value is None or len(self._last_value) != len(new_list):
+            self._last_value = new_list
+            return new_list
+
+        smoothed = [
+            self.alpha * curr + (1 - self.alpha) * prev
+            for curr, prev in zip(new_list, self._last_value)
+        ]
+
+        self._last_value = smoothed
+        return smoothed
+
+    def reset(self) -> None:
+        super().reset()
+        self._last_value = None
