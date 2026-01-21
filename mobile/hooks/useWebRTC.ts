@@ -6,7 +6,8 @@ import {
   SignalingTransport,
   TransportStatus,
 } from '@/types/webrtc';
-import { useCallback, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MediaStream, RTCPeerConnection } from 'react-native-webrtc';
 import { WebSocketTransport } from '@/services/signaling/web-socket-transport';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
@@ -48,6 +49,8 @@ interface UseWebRTCReturn {
 export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   // Assigned by signaling server on WELCOME
   const [clientId, setClientId] = useState<string | null>(null);
+  const [cachedClientId, setCachedClientId] = useState<string | null>(null);
+  const cachedClientIdRef = useRef<string | null>(null);
 
   // Mirrors RTCPeerConnection.connectionState
   const [connectionStatus, setConnectionStatus] = useState<RTCPeerConnectionState>('new');
@@ -63,6 +66,27 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
 
   // Last fatal error encountered anywhere in the stack
   const [error, setError] = useState<string | null>(null);
+
+  const pendingWelcomeResolver = useRef<((id: string) => void) | null>(null);
+  const lastWelcomeId = useRef<string | null>(null);
+
+  const CLIENT_ID_STORAGE_KEY = 'webrtc-client-id';
+
+  useEffect(() => {
+    const loadCachedClientId = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(CLIENT_ID_STORAGE_KEY);
+        if (stored) {
+          setCachedClientId(stored);
+          cachedClientIdRef.current = stored;
+        }
+      } catch (err) {
+        console.warn('Failed to load cached WebRTC client ID:', err);
+      }
+    };
+
+    loadCachedClientId();
+  }, []);
 
   // Thin wrapper to centralize signaling send
   const sendSignalingMessage = useCallback((msg: SignalingMessage) => {
@@ -84,6 +108,16 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       if (msg.type === MessageType.WELCOME) {
         // Server-assigned client identifier
         setClientId(msg.client_id);
+        setCachedClientId(msg.client_id);
+        cachedClientIdRef.current = msg.client_id;
+        lastWelcomeId.current = msg.client_id;
+        pendingWelcomeResolver.current?.(msg.client_id);
+        pendingWelcomeResolver.current = null;
+        try {
+          await AsyncStorage.setItem(CLIENT_ID_STORAGE_KEY, msg.client_id);
+        } catch (err) {
+          console.warn('Failed to persist WebRTC client ID:', err);
+        }
         console.log('Received client ID:', msg.client_id);
       } else if (msg.type === MessageType.ANSWER) {
         // Remote SDP answer completes offer/answer handshake
@@ -158,7 +192,20 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
    * Must complete before SDP offer is sent.
    */
   const initTransport = useCallback(async () => {
-    const transport = new WebSocketTransport(url);
+    const candidateClientId = cachedClientIdRef.current;
+    const signalUrl = candidateClientId
+      ? (() => {
+          try {
+            const parsed = new URL(url);
+            parsed.searchParams.set('client_id', candidateClientId);
+            return parsed.toString();
+          } catch {
+            const separator = url.includes('?') ? '&' : '?';
+            return `${url}${separator}client_id=${encodeURIComponent(candidateClientId)}`;
+          }
+        })()
+      : url;
+    const transport = new WebSocketTransport(signalUrl);
     transport.onMessage(handleSignalingMessage);
     transportRef.current = transport;
     await transport.connect();
@@ -272,8 +319,39 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       setConnectionStatus('connecting');
       console.log('Starting WebRTC connection...');
 
+      lastWelcomeId.current = null;
+      const cachedId = cachedClientId ?? cachedClientIdRef.current;
+
       // Initialize signaling transport first
       await initTransport();
+
+      const welcomeId = await new Promise<string>((resolve) => {
+        if (lastWelcomeId.current) {
+          resolve(lastWelcomeId.current);
+          return;
+        }
+        pendingWelcomeResolver.current = resolve;
+        setTimeout(() => {
+          if (pendingWelcomeResolver.current === resolve) {
+            pendingWelcomeResolver.current = null;
+            resolve('');
+          }
+        }, 3000);
+      });
+
+      const existingPc = pcRef.current;
+      const canReuseExisting =
+        !!cachedId &&
+        cachedId === welcomeId &&
+        existingPc &&
+        existingPc.connectionState !== 'closed' &&
+        existingPc.connectionState !== 'failed';
+
+      if (canReuseExisting) {
+        console.log('Reusing existing WebRTC session for client ID:', welcomeId);
+        setConnectionStatus(existingPc.connectionState);
+        return;
+      }
 
       const rtcConfig: RTCConfiguration = {
         ...(await fetchIceServers()),
@@ -315,7 +393,14 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       setError(`Connection error: ${err.message}`);
       setConnectionStatus('failed');
     }
-  }, [stream, initPeerConnection, initTransport, initDataChannel, sendSignalingMessage]);
+  }, [
+    cachedClientId,
+    stream,
+    initPeerConnection,
+    initTransport,
+    initDataChannel,
+    sendSignalingMessage,
+  ]);
 
   /**
    * Full teardown.
