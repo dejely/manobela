@@ -5,6 +5,9 @@ from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.core.logging import configure_logging
 from app.routers.driver_monitoring import router as driver_monitoring_router
+from app.routers.driver_monitoring_upload import (
+    router as driver_monitoring_upload_router,
+)
 from app.routers.health import router as health_router
 from app.routers.webrtc import router as webrtc_router
 
@@ -30,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(webrtc_router)
     app.include_router(driver_monitoring_router)
+    app.include_router(driver_monitoring_upload_router)
 
     return app
 
