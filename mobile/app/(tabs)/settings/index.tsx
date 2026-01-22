@@ -18,6 +18,7 @@ import {
   SunMoon,
   Bell,
   Vibrate,
+  BookOpenText,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useSettings } from '@/hooks/useSettings';
@@ -71,6 +72,13 @@ export default function SettingsScreen() {
 
       <Section title="Language">
         <SettingRow icon={Languages} label="English" value="Only language available" disabled />
+      </Section>
+
+      <Section title="Guide">
+        <SettingRow
+          icon={BookOpenText}
+          label="Guide"
+          onPress={() => router.push('/(tabs)/guide')}></SettingRow>
       </Section>
 
       <Section title="Alerts">
