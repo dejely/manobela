@@ -28,12 +28,12 @@
 
 The system processes live video streams from a mobile device and analyzes driver behavior through a FastAPI backend, enabling near real-time feedback and analysis.
 ## Key Features
-- 👀 **Gaze Monitoring** (On-road vs Off-road attention)
-- 🥱 **Fatigue indicators** (e.g., yawning, prolonged eye closure)
-- 📱 **Phone usage detection**
-- 🧏 **Head pose level detection**
-- 👁️ **Eye Aspect Ratio**
-- 🏗️ **Modular Architecture** for extending detection metrics
+-  **Gaze Monitoring** (On-road vs Off-road attention)
+-  **Fatigue indicators** (e.g., yawning, prolonged eye closure)
+-  **Phone usage detection**
+-  **Head pose level detection**
+-  **Eye Aspect Ratio**
+-  **Modular Architecture** for extending detection metrics
 
 ## Project Structure
 
