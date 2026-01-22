@@ -57,7 +57,8 @@ export default function TabLayout() {
         }}
       />
       {/* Hidden compartments from tab navigation: */}
-      <Tabs.Screen name = "settings/api-urls" options={{href: null, }} />
+      <Tabs.Screen name="settings/api-urls" options={{ href: null }} />
+      <Tabs.Screen name="settings/guide" options={{ href: null }} />
     </Tabs>
   );
 }

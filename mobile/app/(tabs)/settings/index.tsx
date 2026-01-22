@@ -78,7 +78,8 @@ export default function SettingsScreen() {
         <SettingRow
           icon={BookOpenText}
           label="Guide"
-          onPress={() => router.push('/(tabs)/guide')}></SettingRow>
+          onPress={() => router.push('/settings/guide')}
+        />
       </Section>
 
       <Section title="Alerts">
