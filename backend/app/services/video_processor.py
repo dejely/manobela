@@ -1,9 +1,10 @@
 import asyncio
 import atexit
-import functools
+
 import logging
 import os
 import time
+
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
