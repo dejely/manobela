@@ -7,8 +7,8 @@ from app.models.inference import InferenceData
 class VideoFrameResult(InferenceData):
     """
     Inference output for a specific frame in the uploaded video.
+    Inherits fields from InferenceData.
     """
-    # OPTIMIZATION: Freeze the model for performance boost (hashing/access speed)
     model_config = ConfigDict(frozen=True)
 
     frame_index: int
@@ -19,25 +19,32 @@ class VideoFrameResult(InferenceData):
         cls,
         inference: InferenceData,
         frame_index: int,
-        time_offset_sec: float
+        time_offset_sec: float,
     ) -> "VideoFrameResult":
         """
-        Efficient factory method to avoid redundant validation.
-        Uses model_construct to blindly trust the already-validated inference data.
+        Production-safe: preserves declared fields + extras without converting nested models.
+        Avoids redundant validation by using model_construct().
         """
-        # Pydantic V2: model_construct bypasses validation
+        # Start with internal validated storage (keeps nested models as objects)
+        payload = dict(inference.__dict__)  # safe copy of main fields
+
+        # Include extra fields if InferenceData allows them (common in Pydantic v2)
+        extra = getattr(inference, "__pydantic_extra__", None)
+        if isinstance(extra, dict) and extra:
+            payload.update(extra)
+
+        # Prevent collisions if base ever adds these fields
+        payload.pop("frame_index", None)
+        payload.pop("time_offset_sec", None)
+
         return cls.model_construct(
+            **payload,
             frame_index=frame_index,
             time_offset_sec=time_offset_sec,
-            # Merge fields from the existing validated instance
-            **inference.__dict__
         )
 
-
 class VideoMetadata(BaseModel):
-    """
-    Metadata describing the processed video.
-    """
+    """Metadata describing the processed video."""
     model_config = ConfigDict(frozen=True)
 
     filename: Optional[str] = None
@@ -52,10 +59,8 @@ class VideoMetadata(BaseModel):
     processed_frames: int
     max_width: int
 
-
 class VideoProcessingResponse(BaseModel):
-    """
-    Response schema for video processing requests.
-    """
+    """Response schema for video processing requests."""
+    model_config = ConfigDict(frozen=True)
     video_metadata: VideoMetadata
     frames: list[VideoFrameResult]
