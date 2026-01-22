@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import cv2
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
+# Assumed dependencies (kept as is)
 from app.core.dependencies import FaceLandmarkerDep, ObjectDetectorDep
 from app.models.video_upload import (
     VideoFrameResult,
@@ -37,8 +38,11 @@ class VideoProcessingFailedError(Exception):
     """Raised when video processing fails unexpectedly."""
 
 
+# FIX: Modified to accept primitive types instead of UploadFile object
 def _build_video_metadata(
-    upload_file: UploadFile,
+    filename: str,
+    content_type: str,
+    file_size_bytes: int,
     fps: float,
     total_frames: int,
     width: int,
@@ -51,9 +55,9 @@ def _build_video_metadata(
         duration_seconds = total_frames / fps
 
     return VideoMetadata(
-        filename=upload_file.filename,
-        content_type=upload_file.content_type,
-        size_bytes=_get_file_size(upload_file),
+        filename=filename,
+        content_type=content_type,
+        size_bytes=file_size_bytes,
         fps=fps if fps > 0 else None,
         target_fps=target_fps,
         duration_seconds=duration_seconds,
@@ -65,17 +69,13 @@ def _build_video_metadata(
     )
 
 
-def _get_file_size(upload_file: UploadFile) -> int:
-    upload_file.file.seek(0, os.SEEK_END)
-    size_bytes = upload_file.file.tell()
-    upload_file.file.seek(0)
-    return size_bytes
-
-
+# FIX: Removed UploadFile from arguments, added metadata args
 def _process_video_upload(
     video_path: str,
     target_fps: int,
-    upload_file: UploadFile,
+    filename: str,          # Passed explicitly
+    content_type: str,      # Passed explicitly
+    file_size_bytes: int,   # Passed explicitly
     face_landmarker: FaceLandmarker,
     object_detector: ObjectDetector,
 ) -> VideoProcessingResponse:
@@ -105,6 +105,7 @@ def _process_video_upload(
             frame_index += 1
             time_offset_sec = (cap.get(cv2.CAP_PROP_POS_MSEC) or 0) / 1000
 
+            # Skip frames logic
             if fps > 0 and time_offset_sec + 1e-6 < next_sample_time:
                 continue
 
@@ -131,7 +132,9 @@ def _process_video_upload(
             raise InvalidVideoFormatError("No frames found in video.")
 
         metadata = _build_video_metadata(
-            upload_file=upload_file,
+            filename=filename,
+            content_type=content_type,
+            file_size_bytes=file_size_bytes,
             fps=fps,
             total_frames=total_frames,
             width=width,
@@ -160,16 +163,18 @@ async def process_video(
     video: UploadFile = File(...),
     target_fps: int = Query(15, ge=1, le=60),
 ):
-    """
-    Upload and process a video file for driver monitoring metrics.
-    """
     if video.content_type and not video.content_type.startswith("video/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid video format.",
         )
 
-    size_bytes = _get_file_size(video)
+    # 1. Check size efficiently without seek if possible, or seek/tell in main thread
+    # NOTE: UploadFile.size is not always available, seeking is reliable.
+    await video.seek(0, os.SEEK_END)
+    size_bytes = await video.tell() # Async method available in Starlette/FastAPI
+    await video.seek(0)
+
     if size_bytes > MAX_UPLOAD_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -178,11 +183,23 @@ async def process_video(
 
     suffix = os.path.splitext(video.filename or "")[1] or ".mp4"
     tmp_path = None
+
     try:
+        # 2. FIX: Use non-blocking read to save file
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
             tmp_path = tmp_file.name
-            video.file.seek(0)
-            shutil.copyfileobj(video.file, tmp_file)
+
+        # Read content asynchronously to avoid blocking event loop
+        content = await video.read()
+
+        # Write to disk (run in executor if strict non-blocking is needed,
+        # but standard write for 50MB is usually acceptable.
+        # For maximum safety, we wrap the write operation).
+        await asyncio.to_thread(lambda: open(tmp_path, 'wb').write(content))
+
+        # 3. Extract metadata here in the main thread
+        filename = video.filename or "unknown"
+        content_type = video.content_type or "application/octet-stream"
 
         process_task = asyncio.get_running_loop().run_in_executor(
             None,
@@ -190,18 +207,23 @@ async def process_video(
                 _process_video_upload,
                 tmp_path,
                 target_fps,
-                video,
+                filename,       # Pass string
+                content_type,   # Pass string
+                size_bytes,     # Pass int
                 face_landmarker,
                 object_detector,
             ),
         )
+
         response = await asyncio.wait_for(
             process_task,
             timeout=PROCESSING_TIMEOUT_SEC,
         )
         return response
+
     except asyncio.TimeoutError as exc:
         logger.warning("Video processing timeout for %s", video.filename)
+        # Note: The background thread might still be running CV2 logic here.
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Video processing timed out.",
@@ -219,4 +241,7 @@ async def process_video(
         ) from exc
     finally:
         if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                logger.error(f"Failed to remove temp file {tmp_path}")
