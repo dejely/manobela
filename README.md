@@ -24,7 +24,16 @@
 
 ## About The Project
 
-Manobela is a real-time driver monitoring system that uses computer vision to detect unsafe driving behaviors with only a mobile phone.
+**Manobela** is a real-time driver monitoring system that uses **on-device computer vision** to detect unsafe driving behaviors using only a mobile phone.  It is designed to be **accessible, low-cost, and deployable without specialized hardware**, making driver safety technology more attainable.
+
+The system processes live video streams from a mobile device and analyzes driver behavior through a FastAPI backend, enabling near real-time feedback and analysis.
+## Key Features
+- 👀 **Gaze Monitoring** (On-road vs Off-road attention)
+- 🥱 **Fatigue indicators** (e.g., yawning, prolonged eye closure)
+- 📱 **Phone usage detection**
+- 🧏 **Head pose level detection**
+- 👁️ **Eye Aspect Ratio**
+- 🏗️ **Modular Architecture** for extending detection metrics
 
 ## Project Structure
 
@@ -41,6 +50,7 @@ Manobela is a real-time driver monitoring system that uses computer vision to de
 - Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Node.js 18+, [pnpm](https://pnpm.io/installation)
 - [Android Studio](https://developer.android.com/studio) with an emulator or an Android device
+- [SDK Manager](https://developer.android.com/studio/intro/update#sdk-manager) (**Optional**)
 
 ### Installation
 
@@ -70,40 +80,51 @@ Copy the `.env.example` file to `.env` in both the backend and mobile directorie
 ```sh
 cp .env.example .env
 ```
+Do this for both `mobile/` and `backend/`
+|Variable	|Description	|Required|
+|----------|------------|---------|
+|API_BASE_URL	|Backend HTTP endpoint	| ✔️ |
+|WS_BASE_URL	|WebSocket signaling endpoint	| ✔️ |
 
-Make sure to update variables in the `.env` file with your own values.
+Make sure to update variables in the `.env` file with your _own_ values.
 
-#### 4. Install [pre-commit](https://pre-commit.com/) hooks
-
+#### Running the Application
+You'll need to run the backend and mobile app on two different terminals simultaneously.
+**Backend**
 ```sh
-pipx install pre-commit
-pre-commit install --install-hooks
+cd backend
+source .venv/bin/activate
+python run.py
+# or uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-#### 5. If you want to run on a Physical Device (Android)
-
-##### Enable Developer Options
-
-1. Go to **Settings → About Phone**
-2. Tap **Build Number** **7 times**
-3. You should see: _"You are now a developer"_
-
+```sh
+cd mobile
+pnpm android  # or `pnpm ios`
+pnpm dev --tunnel # if using smartphone device
+```
 ---
 
-### Option A: Easier Version (USB – Recommended)
+## Running on a Physical Device (Optional)
 
+**Enable Developer Options**
+1. Settings → About Phone
+2. Tap Build Number 7 times.
+3. Confirm developer is enabled
+
+### Option A: USB Debugging (Recommended)
 1. Go to **Settings → Developer Options**
 2. Enable **USB Debugging**
-3. Connect your phone to your laptop using a USB cable
-4. Verify device connection:
+3. Connect device via USB
 
+Verify:
 ```sh
 adb devices
+# Ensure you have
 ```
 
-If your device appear then you are ready
+If your device appears then you are ready
 
-### Option B: Better Version (Wireless ADB)
+### Option B: Wireless ADB
 
 > Requires Android 11+ and both devices on the same Wi-Fi network
 
@@ -132,19 +153,5 @@ cd backend
 adb reverse tcp:8000 tcp:8000
 ```
 
-#### 6. Run the application
 
-Run simultaneously the backend and the mobile app in separate terminals:
 
-```sh
-cd backend
-source .venv/bin/activate
-python run.py
-# or uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-```sh
-cd mobile
-pnpm android  # or `pnpm ios`
-pnpm dev --tunnel # if using smartphone device
-```
