@@ -36,7 +36,7 @@ export function CTASection() {
               {/* CTA Buttons */}
               <div className="flex flex-col justify-center gap-4 sm:flex-row sm:gap-6">
                 <Button size="lg" className="cursor-pointer px-8 py-6 text-lg font-medium" asChild>
-                  <a href="#download">
+                  <a href="/download">
                     <Smartphone className="me-2 size-5" />
                     Get the App
                   </a>
