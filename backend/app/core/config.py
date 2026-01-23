@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     # Video processing
     target_fps: int = 15
+    max_upload_size_bytes: int = 100 * 1024 * 1024
+    max_video_duration_seconds: int = 5 * 60
+    max_video_processing_seconds: int = 30
 
     model_config = SettingsConfigDict(
         env_file=".env",
