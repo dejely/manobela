@@ -9,7 +9,7 @@ type NewSession = typeof sessions.$inferInsert;
 
 let currentSessionId: string | null = null;
 let lastLoggedAt = 0;
-const LOG_INTERVAL_MS = 3_000; // throttle to per n seconds
+const LOG_INTERVAL_MS = 5_000; // throttle to per n seconds
 
 export const sessionLogger = {
   /**
