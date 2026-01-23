@@ -18,7 +18,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "This app requires access to the camera for driver monitoring.",
-        "NSMicrophoneUsageDescription": "This app requires access to the microphone for driver monitoring."
+        "NSMicrophoneUsageDescription": "This app requires access to the microphone for driver monitoring.",
+        "NSPhotoLibraryUsageDescription": "Allow access to your photo library to select videos for processing."
       },
       "bitcode": false
     },
@@ -41,7 +42,9 @@
         "android.permission.BLUETOOTH",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -51,6 +54,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-image-picker",
       [
         "expo-build-properties",
         {
