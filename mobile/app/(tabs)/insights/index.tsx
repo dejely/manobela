@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, FlatList, Alert, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { sessions } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
@@ -55,22 +56,31 @@ export default function InsightsScreen() {
           </Button>
 
           {sessionList.length === 0 && (
-            <Text className="py-2 text-center text-sm text-gray-500">No sessions found.</Text>
+            <Text className="py-2 text-center text-sm text-muted">No sessions found.</Text>
           )}
         </View>
       }
       renderItem={({ item: session }) => (
         <TouchableOpacity
           onPress={() => router.push(`/insights/session/${session.id}`)}
-          className="mx-3 mb-4 rounded border p-3">
-          <Text className="font-semibold">Session</Text>
-          <Text>ID: {session.id}</Text>
-          <Text>Client: {session.clientId}</Text>
-          <Text>Start: {new Date(session.startedAt).toLocaleString()}</Text>
-          <Text>
-            End: {session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Still running'}
-          </Text>
-          <Text>Duration: {session.durationMs ?? '-'} ms</Text>
+          activeOpacity={0.8}
+          className="mx-3 mb-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Session</CardTitle>
+              <CardDescription>{new Date(session.startedAt).toLocaleString()}</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <Text>ID: {session.id}</Text>
+              <Text>Client: {session.clientId}</Text>
+              <Text>
+                End:{' '}
+                {session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Still running'}
+              </Text>
+              <Text>Duration: {session.durationMs ?? '-'} ms</Text>
+            </CardContent>
+          </Card>
         </TouchableOpacity>
       )}
     />

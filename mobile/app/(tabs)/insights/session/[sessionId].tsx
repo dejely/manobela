@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, FlatList } from 'react-native';
 import { Text } from '@/components/ui/text';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { metrics, sessions } from '@/db/schema';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useDatabase } from '@/components/database-provider';
@@ -36,16 +37,22 @@ export default function SessionDetailsScreen() {
       {!session && <Text className="text-sm text-gray-500">Session not found.</Text>}
 
       {session && (
-        <View className="mb-4 rounded border p-3">
-          <Text className="font-semibold">Session</Text>
-          <Text>ID: {session.id}</Text>
-          <Text>Client: {session.clientId}</Text>
-          <Text>Start: {new Date(session.startedAt).toLocaleString()}</Text>
-          <Text>
-            End: {session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Still running'}
-          </Text>
-          <Text>Duration: {session.durationMs ?? '-'} ms</Text>
-        </View>
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>Session</CardTitle>
+            <CardDescription>{new Date(session.startedAt).toLocaleString()}</CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <Text>ID: {session.id}</Text>
+            <Text>Client: {session.clientId}</Text>
+            <Text>Start: {new Date(session.startedAt).toLocaleString()}</Text>
+            <Text>
+              End: {session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Still running'}
+            </Text>
+            <Text>Duration: {session.durationMs ?? '-'} ms</Text>
+          </CardContent>
+        </Card>
       )}
 
       <Text className="mb-2 font-semibold">Metrics</Text>
@@ -54,16 +61,22 @@ export default function SessionDetailsScreen() {
         data={sessionMetrics}
         keyExtractor={(item) => item.id}
         renderItem={({ item: m }) => (
-          <View className="mb-3 rounded border p-3">
-            <Text>Time: {new Date(m.timestamp).toLocaleTimeString()}</Text>
-            <Text>EAR: {m.ear}</Text>
-            <Text>MAR: {m.mar}</Text>
-            <Text>Yaw: {m.yaw}</Text>
-            <Text>Pitch: {m.pitch}</Text>
-            <Text>Roll: {m.roll}</Text>
-            <Text>Perclos: {m.perclos}</Text>
-            <Text>Phone Usage: {m.phoneUsage ? 'true' : 'false'}</Text>
-          </View>
+          <Card className="mb-3">
+            <CardHeader>
+              <CardTitle>Metric</CardTitle>
+              <CardDescription>{new Date(m.timestamp).toLocaleTimeString()}</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <Text>EAR: {m.ear}</Text>
+              <Text>MAR: {m.mar}</Text>
+              <Text>Yaw: {m.yaw}</Text>
+              <Text>Pitch: {m.pitch}</Text>
+              <Text>Roll: {m.roll}</Text>
+              <Text>Perclos: {m.perclos}</Text>
+              <Text>Phone Usage: {m.phoneUsage ? 'true' : 'false'}</Text>
+            </CardContent>
+          </Card>
         )}
         ListEmptyComponent={
           <Text className="text-sm text-gray-500">No metrics recorded for this session.</Text>
