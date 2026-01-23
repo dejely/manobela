@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d222f65e-efdd-44b7-8179-62de4b0076eb",
+  "id": "6bda99eb-4d51-4f33-8253-fc98beb7c777",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "metrics": {
@@ -37,42 +37,7 @@
         },
         "ear": {
           "name": "ear",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "perclos": {
-          "name": "perclos",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "mar": {
-          "name": "mar",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "yaw": {
-          "name": "yaw",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pitch": {
-          "name": "pitch",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "roll": {
-          "name": "roll",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -91,11 +56,25 @@
           "notNull": true,
           "autoincrement": false
         },
+        "perclos": {
+          "name": "perclos",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "perclos_alert": {
           "name": "perclos_alert",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "mar": {
+          "name": "mar",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "yawning": {
@@ -107,7 +86,7 @@
         },
         "yawn_sustained": {
           "name": "yawn_sustained",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -117,6 +96,27 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "yaw": {
+          "name": "yaw",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pitch": {
+          "name": "pitch",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "roll": {
+          "name": "roll",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "yaw_alert": {
@@ -142,7 +142,7 @@
         },
         "head_pose_sustained": {
           "name": "head_pose_sustained",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -156,7 +156,7 @@
         },
         "gaze_sustained": {
           "name": "gaze_sustained",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -170,7 +170,7 @@
         },
         "phone_usage_sustained": {
           "name": "phone_usage_sustained",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

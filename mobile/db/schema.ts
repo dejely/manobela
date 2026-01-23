@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 /** Sessions table */
 export const sessions = sqliteTable('sessions', {
@@ -17,29 +17,28 @@ export const metrics = sqliteTable('metrics', {
 
   faceMissing: integer('face_missing', { mode: 'boolean' }).notNull(),
 
-  ear: integer('ear'),
-  perclos: integer('perclos'),
-  mar: integer('mar'),
-  yaw: integer('yaw'),
-  pitch: integer('pitch'),
-  roll: integer('roll'),
-
+  ear: real('ear'),
   eyeClosed: integer('eye_closed', { mode: 'boolean' }).notNull(),
   eyeClosedSustained: integer('eye_closed_sustained').notNull(),
+  perclos: real('perclos'),
   perclosAlert: integer('perclos_alert', { mode: 'boolean' }).notNull(),
 
+  mar: real('mar'),
   yawning: integer('yawning', { mode: 'boolean' }).notNull(),
-  yawnSustained: integer('yawn_sustained').notNull(),
+  yawnSustained: real('yawn_sustained').notNull(),
   yawnCount: integer('yawn_count').notNull(),
 
+  yaw: real('yaw'),
+  pitch: real('pitch'),
+  roll: real('roll'),
   yawAlert: integer('yaw_alert', { mode: 'boolean' }).notNull(),
   pitchAlert: integer('pitch_alert', { mode: 'boolean' }).notNull(),
   rollAlert: integer('roll_alert', { mode: 'boolean' }).notNull(),
-  headPoseSustained: integer('head_pose_sustained').notNull(),
+  headPoseSustained: real('head_pose_sustained').notNull(),
 
   gazeAlert: integer('gaze_alert', { mode: 'boolean' }).notNull(),
-  gazeSustained: integer('gaze_sustained').notNull(),
+  gazeSustained: real('gaze_sustained').notNull(),
 
   phoneUsage: integer('phone_usage', { mode: 'boolean' }).notNull(),
-  phoneUsageSustained: integer('phone_usage_sustained').notNull(),
+  phoneUsageSustained: real('phone_usage_sustained').notNull(),
 });
