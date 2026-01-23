@@ -59,14 +59,23 @@ export const useMonitoringSession = ({
 
   // Sync session state with WebRTC connection
   useEffect(() => {
-    if (connectionStatus === 'connected' && sessionState === 'starting') {
-      setSessionState('active');
-    } else if (connectionStatus === 'closed' && sessionState === 'stopping') {
+    if (connectionStatus === 'failed') {
       setSessionState('idle');
-    } else if (connectionStatus === 'failed') {
-      setSessionState('idle');
+      return;
     }
-  }, [connectionStatus, sessionState]);
+
+    if (connectionStatus === 'closed' && sessionState === 'stopping') {
+      setSessionState('idle');
+      return;
+    }
+
+    if (connectionStatus === 'connected' && sessionState === 'starting') {
+      if (!clientId) return;
+
+      sessionLogger.startSession(clientId);
+      setSessionState('active');
+    }
+  }, [connectionStatus, sessionState, clientId]);
 
   useEffect(() => {
     if (sessionState === 'active') {
@@ -119,12 +128,11 @@ export const useMonitoringSession = ({
     setSessionState('starting');
     try {
       startConnection();
-      await sessionLogger.startSession(clientId);
     } catch (err) {
       console.error('Failed to start connection:', err);
       setSessionState('idle');
     }
-  }, [sessionState, startConnection, clientId]);
+  }, [sessionState, startConnection]);
 
   // Stops the monitoring session.
   const stop = useCallback(async () => {
