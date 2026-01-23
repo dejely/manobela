@@ -10,6 +10,7 @@ import { desc, eq } from 'drizzle-orm';
 
 import { EarTrendChart } from '@/components/charts/ear-trend';
 import { MarTrendChart } from '@/components/charts/mar-trend';
+import SessionTimeRange from '@/components/insights/session-time-range';
 
 export default function SessionDetailsScreen() {
   const { db } = useDatabase();
@@ -19,7 +20,6 @@ export default function SessionDetailsScreen() {
     db.select().from(sessions).where(eq(sessions.id, sessionId)),
     [sessionId]
   );
-
   const session = sessionList?.[0];
 
   const { data: sessionMetrics = [] } = useLiveQuery(
@@ -47,38 +47,11 @@ export default function SessionDetailsScreen() {
 
   const HeaderComponent = () => (
     <>
+      <Stack.Screen options={{ title: 'Session Details' }} />
+
       {session ? (
         <View className="mb-4">
-          <Text className="text-sm font-semibold">
-            {session ? (
-              <>
-                {new Date(session.startedAt).toLocaleDateString()}
-                {' | '}
-                {new Date(session.startedAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true,
-                })}
-                {' to '}
-                {session.endedAt
-                  ? new Date(session.endedAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })
-                  : 'now'}
-              </>
-            ) : (
-              '-'
-            )}
-          </Text>
-
-          <Text className="text-sm text-muted-foreground">
-            Duration:{' '}
-            {session.durationMs != null
-              ? new Date(session.durationMs).toISOString().slice(14, 19)
-              : '-'}
-          </Text>
+          <SessionTimeRange session={session} />
           <Text className="text-sm text-muted-foreground">Client ID: {session.clientId}</Text>
         </View>
       ) : (
@@ -92,7 +65,9 @@ export default function SessionDetailsScreen() {
           <Text className="text-xs text-muted-foreground">Based on Eye Aspect Ratio (EAR).</Text>
         </CardHeader>
         <CardContent>
-          <EarTrendChart data={earValues} />
+          <View style={{ height: 250 }}>
+            <EarTrendChart data={earValues} />
+          </View>
         </CardContent>
       </Card>
 
@@ -103,42 +78,21 @@ export default function SessionDetailsScreen() {
           <Text className="text-xs text-muted-foreground">Based on Mouth Aspect Ratio (MAR).</Text>
         </CardHeader>
         <CardContent>
-          <MarTrendChart data={marValues} />
+          <View style={{ height: 250 }}>
+            <MarTrendChart data={marValues} />
+          </View>
         </CardContent>
       </Card>
-
-      <Text className="mb-2 font-semibold">Metrics</Text>
     </>
   );
 
   return (
     <View className="flex-1 px-3 py-4">
-      <Stack.Screen options={{ title: 'Session Details' }} />
-
       <FlatList
-        data={sessionMetrics}
-        keyExtractor={(item) => item.id}
+        data={[]}
+        keyExtractor={() => 'empty'}
+        renderItem={() => null}
         ListHeaderComponent={HeaderComponent}
-        renderItem={({ item: m }) => (
-          <Card className="mb-3">
-            <CardHeader>
-              <CardTitle>Metric</CardTitle>
-              <CardDescription>{new Date(m.timestamp).toLocaleTimeString()}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Text>EAR: {m.ear}</Text>
-              <Text>MAR: {m.mar}</Text>
-              <Text>Yaw: {m.yaw}</Text>
-              <Text>Pitch: {m.pitch}</Text>
-              <Text>Roll: {m.roll}</Text>
-              <Text>Perclos: {m.perclos}</Text>
-              <Text>Phone Usage: {m.phoneUsage ? 'true' : 'false'}</Text>
-            </CardContent>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <Text className="text-sm text-gray-500">No metrics recorded for this session.</Text>
-        }
       />
     </View>
   );

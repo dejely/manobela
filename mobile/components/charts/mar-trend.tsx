@@ -48,7 +48,7 @@ export const MarTrendChart = ({
       curved
       curveType={CurveType.CUBIC}
       curvature={0.3}
-      hideRules={false}
+      hideRules={true}
       showVerticalLines={false}
       isAnimated={true}
     />
