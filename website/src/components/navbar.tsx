@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, Github, LayoutDashboard, X, Moon, Sun } from 'lucide-react';
+import { Menu, Github, LayoutDashboard, X, Moon, Sun, DownloadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -76,7 +76,14 @@ export function LandingNavbar() {
 
         {/* Desktop CTA */}
         <div className="hidden xl:flex items-center space-x-2">
-          <ModeToggle variant="ghost" />
+          <Button asChild size="sm">
+            <div className="flex gap-1">
+              <DownloadIcon size={14} />
+              <Link href="/download" className="text-sm">
+                Download
+              </Link>
+            </div>
+          </Button>
           <Button variant="ghost" size="icon" asChild className="cursor-pointer">
             <a
               href="https://github.com/popcorn-prophets/manobela"
@@ -86,6 +93,7 @@ export function LandingNavbar() {
               <Github className="h-5 w-5" />
             </a>
           </Button>
+          <ModeToggle variant="ghost" />
         </div>
 
         {/* Mobile Menu */}
