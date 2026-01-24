@@ -18,6 +18,7 @@ interface UseMonitoringSessionReturn {
   // Latest data from the session
   inferenceData: InferenceData | null;
   clientId: string | null;
+  sessionDurationMs: number;
   transportStatus: string;
   connectionStatus: string;
   error: string | null;
@@ -52,6 +53,8 @@ export const useMonitoringSession = ({
 
   // Stores latest data
   const [inferenceData, setInferenceData] = useState<InferenceData | null>(null);
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [sessionDurationMs, setSessionDurationMs] = useState(0);
 
   // Sync session state with WebRTC connection
   useEffect(() => {
@@ -63,6 +66,34 @@ export const useMonitoringSession = ({
       setSessionState('idle');
     }
   }, [connectionStatus, sessionState]);
+
+  useEffect(() => {
+    if (sessionState === 'active') {
+      if (sessionStartedAt === null) {
+        const now = Date.now();
+        setSessionStartedAt(now);
+        setSessionDurationMs(0);
+      }
+      return;
+    }
+
+    if (sessionState === 'idle') {
+      setSessionStartedAt(null);
+      setSessionDurationMs(0);
+    }
+  }, [sessionState, sessionStartedAt]);
+
+  useEffect(() => {
+    if (sessionState !== 'active' || sessionStartedAt === null) return;
+
+    const tick = () => {
+      setSessionDurationMs(Date.now() - sessionStartedAt);
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [sessionState, sessionStartedAt]);
 
   // Subscribe to data channel messages
   useEffect(() => {
@@ -103,6 +134,7 @@ export const useMonitoringSession = ({
     connectionStatus,
     hasCamera: stream !== null,
     inferenceData,
+    sessionDurationMs,
     error,
     errorDetails,
     start,

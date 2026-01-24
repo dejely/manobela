@@ -13,6 +13,7 @@ import { colors } from '@/theme/colors';
 type MediaStreamViewProps = {
   stream: MediaStream | null;
   sessionState: SessionState;
+  sessionDurationMs?: number;
   inferenceData?: InferenceData | null;
   style?: object;
   mirror?: boolean;
@@ -26,6 +27,7 @@ type MediaStreamViewProps = {
 export const MediaStreamView = ({
   stream,
   sessionState,
+  sessionDurationMs = 0,
   inferenceData,
   style,
   mirror = true,
@@ -53,6 +55,7 @@ export const MediaStreamView = ({
 
   const showLandmarks = showOverlays && landmarks != null;
   const showDetections = showOverlays && objectDetections != null;
+  const formattedDuration = formatDuration(sessionDurationMs);
 
   return (
     <View
@@ -115,6 +118,12 @@ export const MediaStreamView = ({
         </View>
 
         <View className="items-center justify-center">
+          {sessionState === 'active' && (
+            <View className="mb-1 flex-row items-center rounded-full bg-black/40 px-2 py-1">
+              <View className="mr-1 h-2 w-2 rounded-full bg-red-500" />
+              <Text className="text-xs text-white">{formattedDuration}</Text>
+            </View>
+          )}
           {inferenceData?.resolution && (
             <View className="rounded-full bg-black/40 px-2 py-1">
               <Text className="text-xs text-white">
@@ -137,4 +146,17 @@ export const MediaStreamView = ({
       </View>
     </View>
   );
+};
+
+const formatDuration = (durationMs: number) => {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };

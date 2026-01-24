@@ -23,11 +23,19 @@ export default function MonitorScreen() {
 
   const { localStream } = useCamera();
 
-  const { sessionState, inferenceData, clientId, error, hasCamera, start, stop } =
-    useMonitoringSession({
-      url: wsUrl,
-      stream: localStream,
-    });
+  const {
+    sessionState,
+    inferenceData,
+    clientId,
+    error,
+    hasCamera,
+    start,
+    stop,
+    sessionDurationMs,
+  } = useMonitoringSession({
+    url: wsUrl,
+    stream: localStream,
+  });
 
   useAlerts({
     metrics: inferenceData?.metrics ?? null,
@@ -60,7 +68,7 @@ export default function MonitorScreen() {
 
   const lastErrorRef = useRef<string | null>(null);
   // --- Friendly Message Error block ---
-    useEffect(() => {
+  useEffect(() => {
     if (!error) {
       lastErrorRef.current = null;
       return;
@@ -82,6 +90,7 @@ export default function MonitorScreen() {
         <MediaStreamView
           stream={localStream}
           sessionState={sessionState}
+          sessionDurationMs={sessionDurationMs}
           inferenceData={inferenceData}
           hasCamera={hasCamera}
           onToggle={handleToggle}
