@@ -20,28 +20,20 @@ const newsletterSchema = z.object({
 
 const footerLinks = {
   product: [
-    { name: 'Features', href: '/#features' },
     { name: 'Pricing', href: '/#pricing' },
     { name: 'API', href: `${apiUrl}` },
-    { name: 'Documentation', href: '/#docs' },
   ],
   company: [
     { name: 'About', href: '/#about' },
-    { name: 'Blog', href: '/#blog' },
-    { name: 'Careers', href: '/#careers' },
-    { name: 'Press', href: '/#press' },
+    { name: 'Features', href: '/#features' },
   ],
   resources: [
-    { name: 'Help Center', href: '/#help' },
-    { name: 'Community', href: '/#community' },
-    { name: 'Guides', href: '/#guides' },
-    { name: 'Webinars', href: '/#webinars' },
+    { name: 'Help', href: '/#faq' },
+    { name: 'Contact', href: '/#contact' },
   ],
   legal: [
     { name: 'Privacy', href: '/#privacy' },
     { name: 'Terms', href: '/#terms' },
-    { name: 'Security', href: '/#security' },
-    { name: 'Status', href: '/#status' },
   ],
 };
 
