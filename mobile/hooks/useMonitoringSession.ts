@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebRTC } from './useWebRTC';
 import { MediaStream } from 'react-native-webrtc';
+import { sessionLogger } from '@/services/logging/session-logger';
 import { InferenceData } from '@/types/inference';
+import { useSessionStore } from '@/stores/sessionStore';
 
 export type SessionState = 'idle' | 'starting' | 'active' | 'stopping';
 
@@ -53,21 +55,35 @@ export const useMonitoringSession = ({
   // Tracks session lifecycle
   const [sessionState, setSessionState] = useState<SessionState>('idle');
 
-  // Stores latest data
+  // Use a ref to avoid re-rendering on every message
+  const latestInferenceRef = useRef<InferenceData | null>(null);
+
+  // Only update state when UI needs it
   const [inferenceData, setInferenceData] = useState<InferenceData | null>(null);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [sessionDurationMs, setSessionDurationMs] = useState(0);
 
   // Sync session state with WebRTC connection
   useEffect(() => {
-    if (connectionStatus === 'connected' && sessionState === 'starting') {
-      setSessionState('active');
-    } else if (connectionStatus === 'closed' && sessionState === 'stopping') {
-      setSessionState('idle');
-    } else if (connectionStatus === 'failed') {
-      setSessionState('idle');
+    if (connectionStatus === 'failed') {
+      (async () => {
+        await sessionLogger.endSession();
+        setSessionState('idle');
+        useSessionStore.getState().setActiveSessionId(null);
+      })();
+      return;
     }
-  }, [connectionStatus, sessionState]);
+
+    if (connectionStatus === 'connected' && sessionState === 'starting') {
+      if (!clientId) return;
+
+      (async () => {
+        await sessionLogger.startSession(clientId);
+        setSessionState('active');
+        useSessionStore.getState().setActiveSessionId(sessionLogger.getCurrentSessionId());
+      })();
+    }
+  }, [connectionStatus, sessionState, clientId]);
 
   useEffect(() => {
     if (sessionState === 'active') {
@@ -100,18 +116,35 @@ export const useMonitoringSession = ({
   // Subscribe to data channel messages
   useEffect(() => {
     const handler = (msg: any) => {
-      setInferenceData(msg);
+      // Update ref for logging (non-rendering)
+      latestInferenceRef.current = msg;
+
+      // Update state only if UI is active and needs it
+      if (sessionState === 'active') {
+        setInferenceData(msg);
+      }
     };
 
     onDataMessage(handler);
-  }, [onDataMessage]);
+  }, [onDataMessage, sessionState]);
 
-  // Starts the monitoring session.
-  const start = useCallback(() => {
+  // Log metrics
+  useEffect(() => {
+    if (sessionState !== 'active') return;
+
+    const interval = setInterval(() => {
+      if (!sessionLogger.getCurrentSessionId()) return;
+      sessionLogger.logMetrics(latestInferenceRef.current);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [sessionState]);
+
+  const start = useCallback(async () => {
     if (sessionState !== 'idle') return;
 
+    setSessionState('starting');
     try {
-      setSessionState('starting');
       startConnection();
     } catch (err) {
       console.error('Failed to start connection:', err);
@@ -120,13 +153,19 @@ export const useMonitoringSession = ({
   }, [sessionState, startConnection]);
 
   // Stops the monitoring session.
-  const stop = useCallback(() => {
+  const stop = useCallback(async () => {
     if (sessionState !== 'active') return;
 
     setSessionState('stopping');
     cleanup();
+
+    await sessionLogger.endSession();
+
+    useSessionStore.getState().setActiveSessionId(null);
+
     setSessionState('idle');
     setInferenceData(null);
+    latestInferenceRef.current = null;
   }, [sessionState, cleanup]);
 
   const recalibrateHeadPose = useCallback(() => {

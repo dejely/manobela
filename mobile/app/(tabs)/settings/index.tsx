@@ -1,12 +1,16 @@
 import { useMemo } from 'react';
-import { Linking, ScrollView } from 'react-native';
+import { Linking, ScrollView, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { SettingRow } from '@/components/setting/settings-row';
+import { useColorScheme } from 'nativewind';
+import { useSettings } from '@/hooks/useSettings';
+import { useDatabase } from '@/components/database-provider';
+import { clearLoggedSessions } from '@/services/logging/clear-logged-sessions';
 import { Section } from '@/components/setting/settings-section';
+import { SettingRow } from '@/components/setting/settings-row';
 import { Switch } from '@/components/ui/switch';
-
 import {
+  Trash2,
   Globe,
   HelpCircle,
   Github,
@@ -20,8 +24,7 @@ import {
   Vibrate,
   BookOpenText,
 } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
-import { useSettings } from '@/hooks/useSettings';
+import { useInsightRefresh } from '@/hooks/useInsightsRefresh';
 
 const LINKS = {
   faq: 'https://github.com/popcorn-prophets/manobela/blob/main/README.md',
@@ -32,6 +35,8 @@ const LINKS = {
 };
 
 export default function SettingsScreen() {
+  const { db } = useDatabase();
+  const { refresh: refreshInsights } = useInsightRefresh();
   const router = useRouter();
   const { colorScheme, setColorScheme } = useColorScheme();
 
@@ -49,6 +54,25 @@ export default function SettingsScreen() {
     } catch (e) {
       console.warn('Failed to open URL', url, e);
     }
+  };
+
+  const handleClearLoggedSessions = () => {
+    Alert.alert('Clear logged data?', 'This will permanently delete all sessions and metrics.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await clearLoggedSessions(db);
+            refreshInsights();
+          } catch (err) {
+            console.error('Failed to clear logged stats', err);
+            Alert.alert('Error', 'Failed to clear data.');
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -150,6 +174,15 @@ export default function SettingsScreen() {
           icon={Link2}
           label="Data Protection"
           onPress={() => handleOpenLink(LINKS.dataProtection)}
+        />
+      </Section>
+
+      <Section title="Danger Zone" destructive>
+        <SettingRow
+          icon={Trash2}
+          label="Clear logged sessions"
+          onPress={handleClearLoggedSessions}
+          destructive
         />
       </Section>
     </ScrollView>

@@ -11,6 +11,7 @@ export type SettingRowProps = {
   onPress?: () => void;
   rightElement?: ReactNode;
   disabled?: boolean;
+  destructive?: boolean;
 };
 
 export function SettingRow({
@@ -20,6 +21,7 @@ export function SettingRow({
   onPress,
   rightElement,
   disabled = false,
+  destructive = false,
 }: SettingRowProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme == 'dark';
@@ -27,7 +29,7 @@ export function SettingRow({
   const Icon = icon;
 
   const iconColor = isDark ? 'white' : 'black';
-  const chevronColor =isDark ? 'white' : 'black';
+  const chevronColor = isDark ? 'white' : 'black';
 
   const baseClassName = 'flex-row items-center justify-between rounded-2xl px-4 py-3';
 
@@ -36,23 +38,37 @@ export function SettingRow({
       className={[
         baseClassName,
         disabled ? 'bg-card opacity-50' : pressed ? 'bg-muted/40' : 'bg-card',
-      ].join(' ')}
-    >
+      ].join(' ')}>
       <View className="flex-row items-center">
-        <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-muted">
-          <Icon className="text-foreground" size={18} color={iconColor}/>
+        <View
+          className={[
+            'mr-3 h-9 w-9 items-center justify-center rounded-full',
+            destructive ? 'bg-destructive/10' : 'bg-muted',
+          ].join(' ')}>
+          <Icon className="text-foreground" size={18} color={destructive ? '#ff4d4f' : iconColor} />
         </View>
 
         <View>
-          <Text className="text-base font-medium text-foreground">{label}</Text>
-          {value ? <Text className="text-sm text-muted-foreground">{value}</Text> : null}
+          <Text
+            className={[
+              'text-base font-medium',
+              destructive ? 'text-destructive' : 'text-foreground',
+            ].join(' ')}>
+            {label}
+          </Text>
+
+          {value ? (
+            <Text className={destructive ? 'text-destructive/70' : 'text-muted-foreground'}>
+              {value}
+            </Text>
+          ) : null}
         </View>
       </View>
 
       <View className="flex-row items-center">
         {rightElement}
         {onPress ? (
-          <ChevronRight className="ml-2 text-muted-foreground" size={18} color={chevronColor}/>
+          <ChevronRight className="ml-2" size={18} color={destructive ? '#ff4d4f' : chevronColor} />
         ) : null}
       </View>
     </View>
@@ -64,8 +80,7 @@ export function SettingRow({
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      onPress={disabled ? undefined : onPress}
-    >
+      onPress={disabled ? undefined : onPress}>
       {({ pressed }) => content(pressed)}
     </Pressable>
   );
