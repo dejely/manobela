@@ -17,7 +17,7 @@ export default function MonitorScreen() {
 
   const { settings } = useSettings();
   const wsUrl = useMemo(() => {
-    const baseUrl = settings.wsBaseUrl || process.env.EXPO_PUBLIC_WS_BASE || ''; // If we cant find just return blank or ''
+    const baseUrl = settings.wsBaseUrl || process.env.EXPO_PUBLIC_WS_BASE || '';
     return baseUrl ? `${baseUrl}/driver-monitoring` : '';
   }, [settings.wsBaseUrl]);
 

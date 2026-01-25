@@ -29,7 +29,6 @@ import {
   Lightbulb,
 } from 'lucide-react-native';
 
-const apiUrl = process.env.EXPO_PUBLIC_API_BASE || 'https://api.manobela.site';
 const websiteUrl = process.env.EXPO_PUBLIC_WEBSITE_BASE || 'https://manobela.site';
 const githubUrl =
   process.env.EXPO_PUBLIC_GITHUB_BASE || 'https://github.com/popcorn-prophets/manobela';
@@ -178,7 +177,11 @@ export default function SettingsScreen() {
       </Section>
 
       <Section title="API">
-        <SettingRow icon={Braces} label="Go to API" onPress={() => handleOpenLink(apiUrl)} />
+        <SettingRow
+          icon={Braces}
+          label="Go to API"
+          onPress={() => handleOpenLink(settings.apiBaseUrl)}
+        />
         <SettingRow
           icon={Globe}
           label="Configure URL"

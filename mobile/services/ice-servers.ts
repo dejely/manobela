@@ -1,33 +1,36 @@
-import { mapNetworkErrorMessage } from "./network-error";
-import { getErrorText } from "./getError";
+import { mapNetworkErrorMessage } from './network-error';
+import { getErrorText } from './getError';
+
 /**
  * Fetches ICE servers from the backend.
  */
-export async function fetchIceServers(): Promise<RTCConfiguration> {
+export async function fetchIceServers({
+  apiBaseUrl,
+}: {
+  apiBaseUrl: string;
+}): Promise<RTCConfiguration> {
   let res: Response;
 
-  // ---- Catch Errors ----
   try {
-    res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE}/ice-servers`);
-  }catch (err: any){
-  const friendly = mapNetworkErrorMessage(getErrorText(err));
+    res = await fetch(`${apiBaseUrl}/ice-servers`);
+  } catch (err: any) {
+    const friendly = mapNetworkErrorMessage(getErrorText(err));
     const error = new Error(friendly);
     (error as { cause?: unknown }).cause = err;
     throw error;
   }
-  // GUARD
-  if (!res.ok) {
 
+  if (!res.ok) {
     let bodyText: string | undefined;
     try {
       bodyText = await res.text();
     } catch {
-      // Ignore!
+      // ignore
     }
 
     const friendly = mapNetworkErrorMessage(
-      bodyText || res.statusText ||
-      `HTTP ${res.status}`, res.status
+      bodyText || res.statusText || `HTTP ${res.status}`,
+      res.status
     );
 
     const error = new Error(friendly);
@@ -38,7 +41,7 @@ export async function fetchIceServers(): Promise<RTCConfiguration> {
     };
     throw error;
   }
-// --------
+
   const data = await res.json();
 
   return {

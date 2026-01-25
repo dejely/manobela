@@ -11,9 +11,9 @@ import { MediaStream, RTCPeerConnection } from 'react-native-webrtc';
 import { WebSocketTransport } from '@/services/signaling/web-socket-transport';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
 import { fetchIceServers } from '@/services/ice-servers';
+import { useSettings } from './useSettings';
 import { mapNetworkErrorMessage } from '@/services/network-error';
 import NetInfo from '@react-native-community/netinfo';
-import { BackHandler, Platform } from 'react-native';
 
 interface UseWebRTCProps {
   // WebSocket signaling endpoint
@@ -50,6 +50,8 @@ interface UseWebRTCReturn {
  * Manages WebRTC peer connection, signaling, and data channel lifecycle.
  */
 export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
+  const { settings } = useSettings();
+
   // Assigned by signaling server on WELCOME
   const [clientId, setClientId] = useState<string | null>(null);
 
@@ -64,9 +66,11 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   // Fan-out handler registries
   const signalingHandlers = useRef<((msg: SignalingMessage) => void)[]>([]);
   const dataChannelHandlers = useRef<((msg: any) => void)[]>([]);
+
   const wasOfflineRef = useRef(false);
   const [isOffline, setIsOffline] = useState(false);
   const isOfflineRef = useRef(false);
+
   // Last fatal error encountered anywhere in the stack
   const [error, setError] = useState<string | null>(null);
 
@@ -315,7 +319,7 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
       }
 
       const rtcConfig: RTCConfiguration = {
-        ...(await fetchIceServers()),
+        ...(await fetchIceServers({ apiBaseUrl: settings.apiBaseUrl })),
       };
 
       // Create peer connection
