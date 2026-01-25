@@ -8,7 +8,7 @@ import { InferenceData } from '@/types/inference';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Eye, EyeOff, Frown, Meh, ScanFace } from 'lucide-react-native';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@react-navigation/native';
 
 type MediaStreamViewProps = {
   stream: MediaStream | null;
@@ -34,6 +34,8 @@ export const MediaStreamView = ({
   hasCamera,
   onToggle,
 }: MediaStreamViewProps) => {
+  const { colors } = useTheme();
+
   const [viewDimensions, setViewDimensions] = useState({ width: 0, height: 0 });
   const [showOverlay, setShowOverlay] = useState(true);
 
