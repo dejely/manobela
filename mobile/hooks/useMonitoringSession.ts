@@ -123,8 +123,11 @@ export const useMonitoringSession = ({
       }
     };
 
-    onDataMessage(handler);
-  }, [onDataMessage, sessionState]);
+    const unsubscribe = onDataMessage(handler);
+    return () => {
+      unsubscribe();
+    };
+  }, [onDataMessage]);
 
   // Log metrics
   useEffect(() => {
