@@ -174,6 +174,7 @@ async def process_video_frames(
 
                 if connection_manager.consume_head_pose_recalibration(client_id):
                     metric_manager.reset_head_pose_baseline()
+                    metric_manager.reset_gaze_baseline()
 
                 # Convert frame to numpy array
                 img = frame.to_ndarray(format="bgr24")
