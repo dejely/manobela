@@ -294,6 +294,32 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
     [sendSignalingMessage]
   );
 
+  const replaceOutgoingTracks = useCallback((nextStream: MediaStream | null) => {
+    const pc = pcRef.current;
+    if (!pc) return;
+    if (!nextStream) return;
+
+    const senders = pc.getSenders();
+
+    nextStream.getTracks().forEach((track) => {
+      const sender = senders.find((s) => s.track?.kind === track.kind);
+      if (sender) {
+        try {
+          sender.replaceTrack(track);
+        } catch (err) {
+          console.warn('Failed to replace sender track', err);
+        }
+        return;
+      }
+      pc.addTrack(track, nextStream);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!pcRef.current) return;
+    replaceOutgoingTracks(stream);
+  }, [stream, replaceOutgoingTracks]);
+
   /**
    * Main entry point.
    * Starts full WebRTC negotiation.
