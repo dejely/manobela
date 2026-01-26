@@ -2,6 +2,7 @@ import logging
 
 from typing_extensions import TypedDict
 
+from app.core.config import settings
 from app.services.metrics.base_metric import BaseMetric
 from app.services.metrics.eye_closure import EyeClosureMetric, EyeClosureMetricOutput
 from app.services.metrics.face_missing_state import FaceMissingState
@@ -29,7 +30,6 @@ class MetricsOutput(TypedDict, total=False):
     gaze: GazeMetricOutput
     phone_usage: PhoneUsageMetricOutput
 
-
 class MetricManager:
     """
     Orchestrates multiple driver monitoring metrics per frame.
@@ -46,6 +46,9 @@ class MetricManager:
             "phone_usage": PhoneUsageMetric(),
         }
         self._head_pose_calibrating = False
+        self._head_pose_alert_frames = 0
+        fps = getattr(settings, "target_fps", 15)
+        self._head_pose_recalibrate_interval_frames = max(1, int(2 * fps))
 
     def update(self, context: FrameContext) -> MetricsOutput:
         """
@@ -75,8 +78,33 @@ class MetricManager:
             except Exception as e:
                 logger.error("Metric '%s' update failed: %s", metric_id, e)
 
+        head_pose_calibrating = bool(
+            head_pose_output and head_pose_output.get("calibrating")
+        )
+        head_pose_alert = bool(
+            head_pose_output
+            and (
+                head_pose_output.get("yaw_alert")
+                or head_pose_output.get("pitch_alert")
+                or head_pose_output.get("roll_alert")
+            )
+        )
+
+        if head_pose_calibrating:
+            self._head_pose_alert_frames = 0
+        elif head_pose_alert:
+            self._head_pose_alert_frames += 1
+            if self._head_pose_alert_frames >= self._head_pose_recalibrate_interval_frames:
+                self.reset_head_pose_baseline()
+                if gaze_metric:
+                    gaze_metric.reset_baseline()
+                    gaze_metric.suspend_calibration()
+                self._head_pose_alert_frames = 0
+                head_pose_calibrating = True
+        else:
+            self._head_pose_alert_frames = 0
+
         if gaze_metric:
-            head_pose_calibrating = bool(head_pose_output and head_pose_output.get("calibrating"))
             if head_pose_calibrating:
                 if not self._head_pose_calibrating:
                     gaze_metric.reset_baseline()
@@ -101,6 +129,7 @@ class MetricManager:
         for metric in self.metrics.values():
             metric.reset()
         self._head_pose_calibrating = False
+        self._head_pose_alert_frames = 0
 
     def reset_head_pose_baseline(self) -> None:
         """Reset head pose baseline calibration without touching other metrics."""
