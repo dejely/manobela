@@ -68,12 +68,21 @@ export const useMonitoringSession = ({
 
   // Sync session state with WebRTC connection
   useEffect(() => {
-    if (connectionStatus === 'failed') {
-      (async () => {
-        await sessionLogger.endSession();
-        setSessionState('idle');
-        useSessionStore.getState().setActiveSessionId(null);
-      })();
+    const isTerminalConnection =
+      connectionStatus === 'failed' ||
+      connectionStatus === 'closed' ||
+      connectionStatus === 'disconnected';
+
+    if (isTerminalConnection) {
+      if (sessionState !== 'idle' && sessionState !== 'stopping') {
+        (async () => {
+          await sessionLogger.endSession();
+          setSessionState('idle');
+          useSessionStore.getState().setActiveSessionId(null);
+          setInferenceData(null);
+          latestInferenceRef.current = null;
+        })();
+      }
       return;
     }
 
