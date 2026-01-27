@@ -20,6 +20,9 @@ export default function DownloadPage() {
 
   const apkUrl = process.env.NEXT_PUBLIC_APK_URL || '/releases/manobela.apk';
 
+  const googlePlayUrl = process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL || 'https://play.google.com/store/apps/details?id=com.manobela.app';
+  const appleAppStoreUrl = process.env.NEXT_PUBLIC_APPLE_APP_STORE_URL || 'https://apps.apple.com/app/id1234567890';
+
   const qrUrl = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     return `${base}${apkUrl}`;
@@ -34,7 +37,7 @@ export default function DownloadPage() {
           <section className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Download Manobela</h1>
             <p className="mt-3 text-base md:text-lg text-muted-foreground">
-              Get the latest version of the mobile app for Android.
+              Get the latest version of the mobile app for Android and iOS.
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-4">
@@ -46,6 +49,38 @@ export default function DownloadPage() {
               <p className="text-sm text-muted-foreground">
                 Version: <span className="font-bold">{appVersion}</span>
               </p>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <a
+                  href={googlePlayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                  aria-label="Get it on Google Play"
+                >
+                  <div className="h-14 w-44 overflow-hidden rounded-md ">
+                    <img
+                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                      alt="Get it on Google Play"
+                      className="h-full w-full object-cover hover:opacity-80 transition-opacity"
+                    />
+                  </div>
+                </a>
+                <a
+                  href={appleAppStoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                  aria-label="Download on the App Store"
+                >
+                  <div className="h-12 w-44 overflow-hidden rounded-md border-2 border-white">
+                    <img
+                      src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&releaseDate=1276560000"
+                      alt="Download on the App Store"
+                      className="h-full w-full object-cover hover:opacity-80 transition-opacity"
+                    />
+                  </div>
+                </a>
+              </div>
             </div>
           </section>
 
