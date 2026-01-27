@@ -66,10 +66,7 @@ export function useLocationPermission(): UseLocationPermissionReturn {
       return false;
     } catch (error: any) {
       console.error('Error requesting location permission:', error);
-      Alert.alert(
-        'Permission Error',
-        error.message || 'Failed to request location permission'
-      );
+      Alert.alert('Permission Error', error.message || 'Failed to request location permission');
       setHasPermission(false);
       return false;
     }
@@ -81,4 +78,3 @@ export function useLocationPermission(): UseLocationPermissionReturn {
     checkPermission,
   };
 }
-
