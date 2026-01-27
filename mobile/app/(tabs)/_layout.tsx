@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { ChartScatter, Aperture, Bolt, HardDriveUpload, Map } from 'lucide-react-native';
+import { ChartScatter, Aperture, Bolt, HardDriveUpload, MapPin } from 'lucide-react-native';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function TabLayout() {
@@ -29,7 +29,7 @@ export default function TabLayout() {
         name="maps/index"
         options={{
           title: 'Maps',
-          tabBarIcon: ({ color, size }) => <Map color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
         }}
       />
 

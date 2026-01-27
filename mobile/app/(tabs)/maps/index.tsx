@@ -1,232 +1,140 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useRef, useMemo, useCallback, useEffect } from 'react';
 import { View, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { OSMView, type OSMViewRef } from 'expo-osm-sdk';
-import * as Location from 'expo-location';
-import { useRouteCalculation } from './hooks/useRouteCalculation';
-import { useLocationPermission } from './hooks/useLocationPermission';
-import { RouteControls } from './components/RouteControls';
-import { RouteInfo } from './components/RouteInfo';
-import { LocationSearchBoxes } from './components/LocationSearchBoxes';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { useTheme } from '@react-navigation/native';
+import { useRouteCalculation } from '@/hooks/maps/useRouteCalculation';
+import { useLocationPermission } from '@/hooks/maps/useLocationPermission';
+import { useMapInitialization } from '@/hooks/maps/useMapInitialization';
+import { useMapMarkers } from '@/hooks/maps/useMapMarkers';
+import { useLocationHandlers } from '@/hooks/maps/useLocationHandlers';
+import { useNavigationManagement } from '@/hooks/maps/useNavigationManagement';
+import { RouteControls } from '@/components/maps/map-control';
+import { RouteInfo } from '@/components/maps/route-info';
+import { NavigationPanel } from '@/components/maps/navigation-panel';
+import { LocationSearchBoxes } from '@/components/maps/location-search-boxes';
+import { useLocation } from '@/hooks/maps/useLocation';
+import { useColorScheme } from 'nativewind';
 
-interface MapLocation {
-  coordinate: { latitude: number; longitude: number };
-  displayName?: string;
-}
+const FALLBACK_INITIAL_CENTER = { latitude: 40.7128, longitude: -74.006 };
+const INITIAL_ZOOM = 20;
 
 export default function MapsScreen() {
-  const mapRef = useRef<OSMViewRef>(null);
-  const [startLocation, setStartLocation] = useState<MapLocation | null>(null);
-  const [destinationLocation, setDestinationLocation] = useState<MapLocation | null>(null);
+  const { colorScheme } = useColorScheme();
+  const { colors } = useTheme();
 
+  const mapRef = useRef<OSMViewRef>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetSnapPoints = useMemo(() => ['15%', '45%', '75%'], []);
+
+  const { getLocation } = useLocation();
+
+  // Initial map setup
+  const {
+    initialCenter,
+    setIsMapReady,
+    startLocation,
+    setStartLocation,
+    destinationLocation,
+    setDestinationLocation,
+  } = useMapInitialization({ mapRef, getLocation, initialZoom: INITIAL_ZOOM });
+
+  // Location permission
+  const { checkPermission } = useLocationPermission();
+
+  // Route calculation
   const {
     route,
     isCalculating,
-    error,
+    error: routeError,
     calculateRoute,
     clearRoute,
     formatDistance,
     formatDuration,
-  } = useRouteCalculation();
+  } = useRouteCalculation({ mapRef });
 
-  const { requestPermission, checkPermission } = useLocationPermission();
-  const [isGettingUserLocation, setIsGettingUserLocation] = useState(false);
+  // Navigation management
+  const {
+    navigationState,
+    startNavigation,
+    stopNavigation,
+    handleLocationUpdate,
+    formatDistanceMeters,
+    formatTimeSeconds,
+  } = useNavigationManagement({ mapRef, route });
+
+  // Location handlers
+  const {
+    isGettingUserLocation,
+    handleStartLocationSelected,
+    handleDestinationLocationSelected,
+    handleUseCurrentLocation,
+  } = useLocationHandlers({
+    mapRef,
+    startLocation,
+    setStartLocation,
+    destinationLocation,
+    setDestinationLocation,
+    getLocation,
+    calculateRoute,
+    initialZoom: INITIAL_ZOOM,
+  });
+
+  // Map markers
+  const markers = useMapMarkers(startLocation, destinationLocation);
+
+  // Handle calculate route (start)
+  const handleCalculateRoute = useCallback(() => {
+    if (startLocation && destinationLocation) {
+      calculateRoute(startLocation.coordinate, destinationLocation.coordinate, mapRef);
+    }
+  }, [calculateRoute, startLocation, destinationLocation]);
+
+  // Handle clear route (stop)
+  const handleClearRoute = useCallback(() => {
+    if (navigationState.isNavigating) {
+      stopNavigation();
+    }
+    clearRoute();
+    setStartLocation(null);
+    setDestinationLocation(null);
+  }, [
+    clearRoute,
+    setStartLocation,
+    setDestinationLocation,
+    navigationState.isNavigating,
+    stopNavigation,
+  ]);
+
+  // Expand/collapse bottom sheet based on route and navigation state
+  useEffect(() => {
+    const sheet = bottomSheetRef.current;
+    if (!sheet) return;
+
+    if (route) {
+      sheet.snapToIndex(0);
+    } else {
+      sheet.close();
+    }
+  }, [route, navigationState.isNavigating]);
 
   // Check permission on mount
   useEffect(() => {
     checkPermission();
   }, [checkPermission]);
 
-  // Function to get user's current location
-  const getUserLocation = useCallback(async (): Promise<MapLocation | null> => {
-    try {
-      // Request location permission first
-      const hasPermission = await requestPermission();
-
-      if (!hasPermission) {
-        return null;
-      }
-
-      // Get current location using expo-location
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      if (!currentLocation) {
-        return null;
-      }
-
-      return {
-        coordinate: {
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-        },
-        displayName: 'Current Location',
-      };
-    } catch (err: any) {
-      console.error('Error getting user location:', err);
-      return null;
-    }
-  }, [requestPermission]);
-
-  // Convert locations to markers array
-  const markers = useMemo(() => {
-    const markersArray = [];
-
-    if (startLocation) {
-      markersArray.push({
-        id: 'start-location',
-        coordinate: {
-          latitude: startLocation.coordinate.latitude,
-          longitude: startLocation.coordinate.longitude,
-        },
-        title: 'Start Location',
-        description: startLocation.displayName || 'Current Location',
-      });
-    }
-
-    if (destinationLocation) {
-      markersArray.push({
-        id: 'destination-location',
-        coordinate: {
-          latitude: destinationLocation.coordinate.latitude,
-          longitude: destinationLocation.coordinate.longitude,
-        },
-        title: destinationLocation.displayName || 'Destination',
-        description: destinationLocation.displayName || 'Destination Location',
-      });
-    }
-
-    return markersArray;
-  }, [startLocation, destinationLocation]);
-
-  // Handle start location selection from search
-  const handleStartLocationSelected = useCallback(
-    async (location: MapLocation) => {
-      setStartLocation(location);
-
-      // Animate map to selected location
-      mapRef.current?.animateToLocation(
-        location.coordinate.latitude,
-        location.coordinate.longitude,
-        15
-      );
-
-      // If destination exists, automatically calculate route
-      if (destinationLocation && mapRef.current) {
-        await calculateRoute(
-          location.coordinate,
-          destinationLocation.coordinate,
-          mapRef
-        );
-      }
-    },
-    [destinationLocation, calculateRoute]
-  );
-
-  // Handle destination location selection from search
-  const handleDestinationLocationSelected = useCallback(
-    async (location: MapLocation) => {
-      setDestinationLocation(location);
-
-      // Animate map to selected location
-      mapRef.current?.animateToLocation(
-        location.coordinate.latitude,
-        location.coordinate.longitude,
-        15
-      );
-
-      // If no start location is set, automatically get user's location
-      if (!startLocation) {
-        setIsGettingUserLocation(true);
-        const userLocation = await getUserLocation();
-
-        if (userLocation) {
-          setStartLocation(userLocation);
-
-          // Auto-calculate route since both locations are now available
-          if (mapRef.current) {
-            await calculateRoute(
-              userLocation.coordinate,
-              location.coordinate,
-              mapRef
-            );
-          }
-        }
-        setIsGettingUserLocation(false);
-      } else {
-        // If start location already exists, auto-calculate route
-        if (mapRef.current) {
-          await calculateRoute(
-            startLocation.coordinate,
-            location.coordinate,
-            mapRef
-          );
-        }
-      }
-    },
-    [startLocation, getUserLocation, calculateRoute]
-  );
-
-  // Handle using current location (sets start and auto-calculates route)
-  const handleUseCurrentLocation = useCallback(async () => {
-    try {
-      if (!mapRef.current) {
-        Alert.alert('Error', 'Map not ready');
-        return;
-      }
-
-      setIsGettingUserLocation(true);
-      const location = await getUserLocation();
-
-      if (!location) {
-        Alert.alert('Error', 'Unable to get current location. Please check your location permissions.');
-        setIsGettingUserLocation(false);
-        return;
-      }
-
-      setStartLocation(location);
-
-      // If destination exists, automatically calculate route
-      if (destinationLocation) {
-        await calculateRoute(
-          location.coordinate,
-          destinationLocation.coordinate,
-          mapRef
-        );
-      } else {
-        // Animate to current location if no destination
-        mapRef.current?.animateToLocation(
-          location.coordinate.latitude,
-          location.coordinate.longitude,
-          15
-        );
-      }
-      setIsGettingUserLocation(false);
-    } catch (err: any) {
-      console.error('Error getting current location:', err);
-      Alert.alert('Error', err.message || 'Failed to get current location');
-      setIsGettingUserLocation(false);
-    }
-  }, [destinationLocation, calculateRoute, getUserLocation]);
-
-  // Handle clear route
-  const handleClearRoute = useCallback(() => {
-    clearRoute();
-    setStartLocation(null);
-    setDestinationLocation(null);
-  }, [clearRoute]);
-
   // Show error alerts
   useEffect(() => {
-    if (error) {
-      Alert.alert('Route Error', error);
+    if (routeError) {
+      Alert.alert('Route Calculation Error', routeError);
     }
-  }, [error]);
+  }, [routeError]);
 
   return (
     <View className="flex-1">
       <Stack.Screen options={{ title: 'Maps' }} />
+
       <LocationSearchBoxes
         startLocation={startLocation}
         destinationLocation={destinationLocation}
@@ -234,30 +142,73 @@ export default function MapsScreen() {
         onDestinationLocationSelected={handleDestinationLocationSelected}
         onUseCurrentLocation={handleUseCurrentLocation}
         isGettingUserLocation={isGettingUserLocation}
+        className="absolute left-4 right-4 top-4"
       />
+
       <OSMView
         ref={mapRef}
         style={{ flex: 1 }}
-        initialCenter={{ latitude: 40.7128, longitude: -74.006 }}
-        initialZoom={13}
+        initialCenter={initialCenter ?? FALLBACK_INITIAL_CENTER}
+        initialZoom={INITIAL_ZOOM}
+        followUserLocation={true}
         markers={markers}
+        onMapReady={() => setIsMapReady(true)}
         onMarkerPress={(id) => {
           console.log('Marker pressed:', id);
         }}
+        onUserLocationChange={(location) => {
+          handleLocationUpdate(location);
+        }}
+        styleUrl={
+          colorScheme === 'dark'
+            ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+            : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+        }
       />
+
       <RouteControls
         onUseCurrentLocation={handleUseCurrentLocation}
+        onCalculateRoute={handleCalculateRoute}
         onClearRoute={handleClearRoute}
+        onStartNavigation={startNavigation}
+        onZoomIn={mapRef.current?.zoomIn || (() => {})}
+        onZoomOut={mapRef.current?.zoomOut || (() => {})}
         hasRoute={!!route}
         isCalculating={isCalculating}
-        hasCurrentLocation={!!startLocation}
         isGettingUserLocation={isGettingUserLocation}
+        isNavigating={navigationState.isNavigating}
+        className="absolute bottom-32 right-4"
       />
-      <RouteInfo
-        route={route}
-        formatDistance={formatDistance}
-        formatDuration={formatDuration}
-      />
+
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={bottomSheetSnapPoints}
+        enableDynamicSizing={false}
+        backgroundStyle={{ backgroundColor: colors.background }}
+        handleStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.primary }}>
+        <BottomSheetView className="px-2 py-2">
+          {navigationState.isNavigating ? (
+            <NavigationPanel
+              isNavigating={navigationState.isNavigating}
+              distanceRemaining={navigationState.distanceRemaining}
+              timeRemaining={navigationState.timeRemaining}
+              nextTurnInstruction={navigationState.nextTurnInstruction}
+              progress={navigationState.progress}
+              onStopNavigation={stopNavigation}
+              formatDistanceMeters={formatDistanceMeters}
+              formatTimeSeconds={formatTimeSeconds}
+            />
+          ) : (
+            <RouteInfo
+              route={route}
+              formatDistance={formatDistance}
+              formatDuration={formatDuration}
+            />
+          )}
+        </BottomSheetView>
+      </BottomSheet>
     </View>
   );
 }

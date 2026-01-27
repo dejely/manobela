@@ -10,6 +10,7 @@ import { useColorScheme } from 'nativewind';
 import { SettingsProvider } from '@/hooks/useSettings';
 import { DatabaseProvider } from '@/components/database-provider';
 import { InsightRefreshProvider } from '@/hooks/useInsightsRefresh';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -24,11 +25,13 @@ export default function RootLayout() {
       <SettingsProvider>
         <InsightRefreshProvider>
           <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-            <PortalHost />
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+              <PortalHost />
+            </GestureHandlerRootView>
           </ThemeProvider>
         </InsightRefreshProvider>
       </SettingsProvider>

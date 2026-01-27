@@ -1,10 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useOSRMRouting, type OSMViewRef, type Route } from 'expo-osm-sdk';
-
-interface Coordinate {
-  latitude: number;
-  longitude: number;
-}
+import { Coordinate } from '@/types/maps';
 
 interface UseRouteCalculationReturn {
   route: Route | null;
@@ -20,7 +16,11 @@ interface UseRouteCalculationReturn {
   formatDuration: (route: Route) => string;
 }
 
-export function useRouteCalculation(): UseRouteCalculationReturn {
+export function useRouteCalculation({
+  mapRef,
+}: {
+  mapRef: React.RefObject<OSMViewRef | null>;
+}): UseRouteCalculationReturn {
   const routing = useOSRMRouting();
   const [route, setRoute] = useState<Route | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -52,9 +52,9 @@ export function useRouteCalculation(): UseRouteCalculationReturn {
           {
             profile: 'driving',
             routeStyle: {
-              color: '#007AFF', // Blue color for route
-              width: 5,
-              opacity: 0.8,
+              color: '#E76A6A', // light red
+              width: 4,
+              opacity: 0.6,
             },
           }
         );
@@ -80,9 +80,11 @@ export function useRouteCalculation(): UseRouteCalculationReturn {
   const clearRoute = useCallback(() => {
     setRoute(null);
     setError(null);
-    // Note: The SDK should handle clearing the route from the map
-    // when route is set to null or when calculateAndDisplayRoute is called again
-  }, []);
+
+    if (mapRef.current) {
+      routing.clearRoute(mapRef as React.RefObject<OSMViewRef>);
+    }
+  }, [mapRef, routing]);
 
   const formatDistance = useCallback(
     (route: Route) => {
