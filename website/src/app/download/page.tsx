@@ -20,6 +20,9 @@ export default function DownloadPage() {
 
   const apkUrl = process.env.NEXT_PUBLIC_APK_URL || '/releases/manobela.apk';
 
+  const googlePlayUrl = process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL || 'https://play.google.com/store/apps/details?id=com.manobela.app';
+  const appleAppStoreUrl = process.env.NEXT_PUBLIC_APPLE_APP_STORE_URL || 'https://apps.apple.com/app/id1234567890';
+
   const qrUrl = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     return `${base}${apkUrl}`;
@@ -48,7 +51,7 @@ export default function DownloadPage() {
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <a
-                  href="https://play.google.com/store/apps/details?id=com.manobela.app"
+                  href={googlePlayUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
@@ -63,7 +66,7 @@ export default function DownloadPage() {
                   </div>
                 </a>
                 <a
-                  href="https://apps.apple.com/app/id1234567890"
+                  href={appleAppStoreUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
