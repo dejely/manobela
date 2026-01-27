@@ -65,6 +65,7 @@ export const useNavigationManagement = ({ mapRef, route }: UseNavigationManageme
 
   const isMountedRef = useRef(true);
   const navigationArrowIdRef = useRef<string>('navigation-arrow');
+  const stopNavigationRef = useRef<(() => Promise<void>) | null>(null);
 
   // Format distance in meters to human-readable string
   const formatDistanceMeters = useCallback((meters: number): string => {
@@ -191,6 +192,16 @@ export const useNavigationManagement = ({ mapRef, route }: UseNavigationManageme
         const progress = totalDistance > 0 ? 1 - distance / totalDistance : 0;
         const nextTurnInstruction = getNextTurnInstruction(currentStepIndex);
 
+        // Check if destination reached - auto-stop navigation
+        if (distance < 50 && progress > 0.95) {
+          // Stop navigation after a short delay to show arrival message
+          setTimeout(() => {
+            if (isMountedRef.current && stopNavigationRef.current) {
+              stopNavigationRef.current();
+            }
+          }, 2000);
+        }
+
         // Update camera to follow user
         requestAnimationFrame(() => {
           if (!isMountedRef.current || !mapRef.current) return;
@@ -304,6 +315,11 @@ export const useNavigationManagement = ({ mapRef, route }: UseNavigationManageme
       console.error('Error stopping navigation:', error);
     }
   }, [mapRef]);
+
+  // Update ref with stopNavigation
+  useEffect(() => {
+    stopNavigationRef.current = stopNavigation;
+  }, [stopNavigation]);
 
   // Get navigation arrow marker with rotation
   const getNavigationArrowMarker = useCallback(() => {
