@@ -146,8 +146,16 @@ export default function UploadsScreen() {
     activeGroup?.aggregate.resolution ??
     result?.video_metadata?.resolution ??
     null;
-  const overlayLandmarks = showOverlays ? overlaySnapshot?.landmarks ?? fallbackLandmarks : null;
-  const overlayDetections = showOverlays ? overlaySnapshot?.detections ?? fallbackDetections : null;
+  const overlayLandmarks = showOverlays
+    ? overlaySnapshot
+      ? overlaySnapshot.landmarks
+      : fallbackLandmarks
+    : null;
+  const overlayDetections = showOverlays
+    ? overlaySnapshot
+      ? overlaySnapshot.detections
+      : fallbackDetections
+    : null;
   const canRenderOverlay =
     Boolean(overlayResolution) && playbackView.width > 0 && playbackView.height > 0;
   const hasOverlayData =
