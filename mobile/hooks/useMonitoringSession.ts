@@ -5,7 +5,7 @@ import { sessionLogger } from '@/services/logging/session-logger';
 import { InferenceData } from '@/types/inference';
 import { useSessionStore } from '@/stores/sessionStore';
 
-export type SessionState = 'idle' | 'starting' | 'active' | 'stopping';
+export type SessionState = 'idle' | 'starting' | 'active' | 'paused' | 'stopping';
 
 interface UseMonitoringSessionProps {
   // WebSocket signaling endpoint
@@ -46,7 +46,7 @@ export const useMonitoringSession = ({
     startConnection,
     cleanup,
     transportStatus,
-    connectionStatus, 
+    connectionStatus,
     dataChannelState,
     onDataMessage,
     sendDataMessage,
@@ -66,24 +66,16 @@ export const useMonitoringSession = ({
   // Only update state when UI needs it
   const [inferenceData, setInferenceData] = useState<InferenceData | null>(null);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [sessionAccumulatedMs, setSessionAccumulatedMs] = useState(0);
   const [sessionDurationMs, setSessionDurationMs] = useState(0);
 
-  const setStreamEnabled = useCallback(
-    (enabled: boolean) => {
-      if (!stream) return;
-      stream.getTracks().forEach((track) => {
-        track.enabled = enabled;
-      });
-    },
-    [stream]
-  );
-
-  const sendMonitoringControl = useCallback(
-    (action: 'pause' | 'resume') => {
-      sendDataMessage({ type: 'monitoring-control', action });
-    },
-    [sendDataMessage]
-  );
+  const getActiveDurationMs = useCallback(() => {
+    const activeElapsed =
+      sessionState === 'active' && sessionStartedAt !== null
+        ? Date.now() - sessionStartedAt
+        : 0;
+    return sessionAccumulatedMs + activeElapsed;
+  }, [sessionAccumulatedMs, sessionStartedAt, sessionState]);
 
   // Sync session state with WebRTC connection
   useEffect(() => {
@@ -95,11 +87,12 @@ export const useMonitoringSession = ({
     if (isTerminalConnection) {
       if (sessionState !== 'idle' && sessionState !== 'stopping') {
         (async () => {
-          await sessionLogger.endSession();
+          await sessionLogger.endSession(getActiveDurationMs());
           setSessionState('idle');
           useSessionStore.getState().setActiveSessionId(null);
           setInferenceData(null);
           latestInferenceRef.current = null;
+          setSessionAccumulatedMs(0);
         })();
       }
       return;
@@ -109,40 +102,54 @@ export const useMonitoringSession = ({
       if (!clientId) return;
 
       (async () => {
-        await sessionLogger.startSession(clientId);
+        if (!sessionLogger.getCurrentSessionId()) {
+          await sessionLogger.startSession(clientId);
+        }
         setSessionState('active');
         useSessionStore.getState().setActiveSessionId(sessionLogger.getCurrentSessionId());
       })();
     }
-  }, [connectionStatus, sessionState, clientId]);
+  }, [connectionStatus, sessionState, clientId, getActiveDurationMs]);
 
   useEffect(() => {
     if (sessionState === 'active') {
       if (sessionStartedAt === null) {
-        const now = Date.now();
-        setSessionStartedAt(now);
-        setSessionDurationMs(0);
+        setSessionStartedAt(Date.now());
+      }
+      return;
+    }
+
+    if (sessionState === 'paused') {
+      if (sessionStartedAt !== null) {
+        const elapsed = Date.now() - sessionStartedAt;
+        const total = sessionAccumulatedMs + elapsed;
+        setSessionAccumulatedMs(total);
+        setSessionDurationMs(total);
+        setSessionStartedAt(null);
+      } else {
+        setSessionDurationMs(sessionAccumulatedMs);
       }
       return;
     }
 
     if (sessionState === 'idle') {
       setSessionStartedAt(null);
+      setSessionAccumulatedMs(0);
       setSessionDurationMs(0);
     }
-  }, [sessionState, sessionStartedAt]);
+  }, [sessionState, sessionStartedAt, sessionAccumulatedMs]);
 
   useEffect(() => {
     if (sessionState !== 'active' || sessionStartedAt === null) return;
 
     const tick = () => {
-      setSessionDurationMs(Date.now() - sessionStartedAt);
+      setSessionDurationMs(sessionAccumulatedMs + (Date.now() - sessionStartedAt));
     };
 
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [sessionState, sessionStartedAt]);
+  }, [sessionState, sessionStartedAt, sessionAccumulatedMs]);
 
   useEffect(() => {
     sessionStateRef.current = sessionState;
@@ -179,7 +186,7 @@ export const useMonitoringSession = ({
   }, [sessionState]);
 
   const start = useCallback(async () => {
-    if (sessionState !== 'idle') return;
+    if (sessionState !== 'idle' && sessionState !== 'paused') return;
 
     try {
       const canResume =
@@ -187,7 +194,6 @@ export const useMonitoringSession = ({
 
       if (canResume) {
         setSessionState('starting');
-      if (connectionStatus === 'connected' && clientId) {
         setStreamEnabled(true);
         sendMonitoringControl('resume');
         return;
@@ -209,34 +215,19 @@ export const useMonitoringSession = ({
     connectionStatus,
     clientId,
     dataChannelState,
-    sendMonitoringControl,
-    cleanup,
     setStreamEnabled,
     sendMonitoringControl,
+    cleanup,
     startConnection,
   ]);
 
-  // Stops the monitoring session.
+  // Pauses the monitoring session without ending it.
   const stop = useCallback(async () => {
     if (sessionState !== 'active') return;
 
-    setSessionState('stopping');
     sendMonitoringControl('pause');
     setStreamEnabled(false);
-    if (connectionStatus === 'connected') {
-      sendMonitoringControl('pause');
-      setStreamEnabled(false);
-    } else {
-      cleanup();
-    }
-
-    await sessionLogger.endSession();
-
-    useSessionStore.getState().setActiveSessionId(null);
-
-    setSessionState('idle');
-    setInferenceData(null);
-    latestInferenceRef.current = null;
+    setSessionState('paused');
   }, [sessionState, sendMonitoringControl, setStreamEnabled]);
 
   useEffect(() => {
@@ -244,8 +235,11 @@ export const useMonitoringSession = ({
       sendMonitoringControl('pause');
       setStreamEnabled(false);
       cleanup();
+      sessionLogger.endSession(getActiveDurationMs()).catch(() => undefined);
+      useSessionStore.getState().setActiveSessionId(null);
+      setSessionAccumulatedMs(0);
     };
-  }, [cleanup, sendMonitoringControl, setStreamEnabled]);
+  }, [cleanup, sendMonitoringControl, setStreamEnabled, getActiveDurationMs]);
 
   const recalibrateHeadPose = useCallback(() => {
     if (dataChannelState === 'open') {
