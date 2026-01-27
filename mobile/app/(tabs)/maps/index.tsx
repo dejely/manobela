@@ -12,7 +12,6 @@ import { useLocationHandlers } from '@/hooks/maps/useLocationHandlers';
 import { RouteControls } from '@/components/maps/route-control';
 import { RouteInfo } from '@/components/maps/route-info';
 import { LocationSearchBoxes } from '@/components/maps/location-search-boxes';
-import { ZoomControls } from '@/components/maps/zoom-controls';
 
 const FALLBACK_INITIAL_CENTER = { latitude: 40.7128, longitude: -74.006 };
 const INITIAL_ZOOM = 20;
@@ -130,15 +129,11 @@ export default function MapsScreen() {
         }
       />
 
-      <ZoomControls
-        onZoomIn={mapRef.current?.zoomIn || (() => {})}
-        onZoomOut={mapRef.current?.zoomOut || (() => {})}
-        className="absolute bottom-32 left-4"
-      />
-
       <RouteControls
         onUseCurrentLocation={handleUseCurrentLocation}
         onClearRoute={handleClearRoute}
+        onZoomIn={mapRef.current?.zoomIn || (() => {})}
+        onZoomOut={mapRef.current?.zoomOut || (() => {})}
         hasRoute={!!route}
         isCalculating={isCalculating}
         hasCurrentLocation={!!startLocation}

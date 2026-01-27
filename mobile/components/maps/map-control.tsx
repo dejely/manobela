@@ -2,10 +2,13 @@ import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Navigation, X } from 'lucide-react-native';
 import { useTheme } from '@react-navigation/native';
 import { cn } from '@/lib/utils';
+import { ZoomControls } from './zoom-controls';
 
 interface RouteControlsProps {
   onUseCurrentLocation: () => void;
   onClearRoute: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
   hasRoute: boolean;
   isCalculating: boolean;
   hasCurrentLocation: boolean;
@@ -16,6 +19,8 @@ interface RouteControlsProps {
 export function RouteControls({
   onUseCurrentLocation,
   onClearRoute,
+  onZoomIn,
+  onZoomOut,
   hasRoute,
   isCalculating,
   hasCurrentLocation,
@@ -47,6 +52,9 @@ export function RouteControls({
           <X color="white" size={20} />
         </TouchableOpacity>
       )}
+
+      {/* Zoom Controls */}
+      <ZoomControls onZoomIn={onZoomIn} onZoomOut={onZoomOut} />
     </View>
   );
 }
