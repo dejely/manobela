@@ -52,9 +52,9 @@ export function useRouteCalculation({
           {
             profile: 'driving',
             routeStyle: {
-              color: '#007AFF', // Blue color for route
-              width: 5,
-              opacity: 0.8,
+              color: '#E76A6A', // light red
+              width: 4,
+              opacity: 0.6,
             },
           }
         );
