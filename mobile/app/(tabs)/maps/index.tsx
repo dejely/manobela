@@ -3,11 +3,11 @@ import { View, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { OSMView, type OSMViewRef } from 'expo-osm-sdk';
 import * as Location from 'expo-location';
-import { useRouteCalculation } from './hooks/useRouteCalculation';
-import { useLocationPermission } from './hooks/useLocationPermission';
-import { RouteControls } from './components/RouteControls';
-import { RouteInfo } from './components/RouteInfo';
-import { LocationSearchBoxes } from './components/LocationSearchBoxes';
+import { useRouteCalculation } from '../../../hooks/maps/useRouteCalculation';
+import { useLocationPermission } from '../../../hooks/maps/useLocationPermission';
+import { RouteControls } from '../../../components/maps/route-control';
+import { RouteInfo } from '../../../components/maps/route-info';
+import { LocationSearchBoxes } from '../../../components/maps/location-search-boxes';
 
 interface MapLocation {
   coordinate: { latitude: number; longitude: number };
@@ -114,11 +114,7 @@ export default function MapsScreen() {
 
       // If destination exists, automatically calculate route
       if (destinationLocation && mapRef.current) {
-        await calculateRoute(
-          location.coordinate,
-          destinationLocation.coordinate,
-          mapRef
-        );
+        await calculateRoute(location.coordinate, destinationLocation.coordinate, mapRef);
       }
     },
     [destinationLocation, calculateRoute]
@@ -146,22 +142,14 @@ export default function MapsScreen() {
 
           // Auto-calculate route since both locations are now available
           if (mapRef.current) {
-            await calculateRoute(
-              userLocation.coordinate,
-              location.coordinate,
-              mapRef
-            );
+            await calculateRoute(userLocation.coordinate, location.coordinate, mapRef);
           }
         }
         setIsGettingUserLocation(false);
       } else {
         // If start location already exists, auto-calculate route
         if (mapRef.current) {
-          await calculateRoute(
-            startLocation.coordinate,
-            location.coordinate,
-            mapRef
-          );
+          await calculateRoute(startLocation.coordinate, location.coordinate, mapRef);
         }
       }
     },
@@ -180,7 +168,10 @@ export default function MapsScreen() {
       const location = await getUserLocation();
 
       if (!location) {
-        Alert.alert('Error', 'Unable to get current location. Please check your location permissions.');
+        Alert.alert(
+          'Error',
+          'Unable to get current location. Please check your location permissions.'
+        );
         setIsGettingUserLocation(false);
         return;
       }
@@ -189,11 +180,7 @@ export default function MapsScreen() {
 
       // If destination exists, automatically calculate route
       if (destinationLocation) {
-        await calculateRoute(
-          location.coordinate,
-          destinationLocation.coordinate,
-          mapRef
-        );
+        await calculateRoute(location.coordinate, destinationLocation.coordinate, mapRef);
       } else {
         // Animate to current location if no destination
         mapRef.current?.animateToLocation(
@@ -253,11 +240,7 @@ export default function MapsScreen() {
         hasCurrentLocation={!!startLocation}
         isGettingUserLocation={isGettingUserLocation}
       />
-      <RouteInfo
-        route={route}
-        formatDistance={formatDistance}
-        formatDuration={formatDuration}
-      />
+      <RouteInfo route={route} formatDistance={formatDistance} formatDuration={formatDuration} />
     </View>
   );
 }
