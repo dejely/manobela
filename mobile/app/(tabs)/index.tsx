@@ -7,16 +7,20 @@ import { useMonitoringSession } from '@/hooks/useMonitoringSession';
 import { useAlerts } from '@/hooks/useAlerts';
 import { MediaStreamView } from '@/components/media-stream-view';
 import { ConnectionStatus } from '@/components/connection-status';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { MetricsDisplay } from '@/components/metrics/metrics-display';
 import { Text } from '@/components/ui/text';
-
 import { useSettings } from '@/hooks/useSettings';
+import { useCoordinationStore } from '@/stores/coordinationStore';
 
 export default function MonitorScreen() {
   useKeepAwake();
 
+  const router = useRouter();
   const { settings } = useSettings();
+  const { shouldStartMonitoring, clearMonitoringRequest, requestNavigationStart, setCoordinating } =
+    useCoordinationStore();
+
   const wsUrl = useMemo(() => {
     const baseUrl = settings.wsBaseUrl || process.env.EXPO_PUBLIC_WS_BASE || '';
     return baseUrl ? `${baseUrl}/driver-monitoring` : '';
@@ -62,6 +66,36 @@ export default function MonitorScreen() {
       stop();
     }
   }, [sessionState, start, stop]);
+
+  // Auto-start navigation when monitoring starts (if enabled)
+  useEffect(() => {
+    if (
+      settings.enableAutoCoordination &&
+      sessionState === 'active' &&
+      !useCoordinationStore.getState().isCoordinating
+    ) {
+      setCoordinating(true);
+      requestNavigationStart();
+      // Navigate to maps tab
+      router.push('/(tabs)/maps');
+      // Reset coordination flag after a delay
+      setTimeout(() => setCoordinating(false), 1000);
+    }
+  }, [
+    sessionState,
+    settings.enableAutoCoordination,
+    requestNavigationStart,
+    setCoordinating,
+    router,
+  ]);
+
+  // Listen for requests to start monitoring from navigation
+  useEffect(() => {
+    if (shouldStartMonitoring && sessionState === 'idle') {
+      clearMonitoringRequest();
+      start();
+    }
+  }, [shouldStartMonitoring, sessionState, start, clearMonitoringRequest]);
 
   const aspectRatio = useMemo(() => {
     const width = inferenceData?.resolution?.width ?? 320;
