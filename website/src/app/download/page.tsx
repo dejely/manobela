@@ -18,15 +18,15 @@ export const metadata: Metadata = {
 export default function DownloadPage() {
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
 
-  const apkUrl = process.env.NEXT_PUBLIC_APK_URL || '/releases/manobela.apk';
+  const apkUrl =
+    process.env.NEXT_PUBLIC_APK_URL ||
+    'https://github.com/popcorn-prophets/manobela/releases/latest';
 
-  const googlePlayUrl = process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL || 'https://play.google.com/store/apps/details?id=com.manobela.app';
-  const appleAppStoreUrl = process.env.NEXT_PUBLIC_APPLE_APP_STORE_URL || 'https://apps.apple.com/app/id1234567890';
-
-  const qrUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    return `${base}${apkUrl}`;
-  }, [apkUrl]);
+  const googlePlayUrl =
+    process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL ||
+    'https://play.google.com/store/apps/details?id=com.manobela.app';
+  const appleAppStoreUrl =
+    process.env.NEXT_PUBLIC_APPLE_APP_STORE_URL || 'https://apps.apple.com/app/id1234567890';
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,8 +55,7 @@ export default function DownloadPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
-                  aria-label="Get it on Google Play"
-                >
+                  aria-label="Get it on Google Play">
                   <div className="h-14 w-44 overflow-hidden rounded-md ">
                     <img
                       src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
@@ -70,8 +69,7 @@ export default function DownloadPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
-                  aria-label="Download on the App Store"
-                >
+                  aria-label="Download on the App Store">
                   <div className="h-12 w-44 overflow-hidden rounded-md border-2 border-white">
                     <img
                       src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&releaseDate=1276560000"
@@ -89,7 +87,7 @@ export default function DownloadPage() {
           <section className="text-center space-y-4">
             <h2 className="text-xl font-semibold">Scan to Download</h2>
             <div className="inline-block bg-white p-4 rounded-xl">
-              <QRCode value={qrUrl} size={180} />
+              <QRCode value={apkUrl} size={180} />
             </div>
             <p className="text-sm text-muted-foreground">
               Scan with your phone camera to download directly.
