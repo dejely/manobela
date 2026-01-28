@@ -1,6 +1,6 @@
 import { Alert } from 'react-native';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -26,6 +26,20 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VideoProcessingResponse | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const requestIdRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      requestIdRef.current += 1;
+      if (xhrRef.current) {
+        xhrRef.current.abort();
+        xhrRef.current = null;
+      }
+    };
+  }, []);
 
   const normalizeVideoName = (name: string, mimeType?: string | null) => {
     const safeName = name.trim() || 'upload';
@@ -90,6 +104,13 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
       return;
     }
 
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+    }
+
     setIsUploading(true);
     setIsProcessing(false);
     setUploadProgress(0);
@@ -104,6 +125,7 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
     } as unknown as Blob);
 
     const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
     const uploadUrl =
       `${apiBaseUrl}/driver-monitoring/process-video` +
       `?group_interval_sec=5&include_frames=true&target_fps=10`;
@@ -112,6 +134,7 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
     xhr.setRequestHeader('Accept', 'application/json');
 
     xhr.upload.onprogress = (event) => {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       if (!event.lengthComputable) return;
       const progress = Math.round((event.loaded / event.total) * 100);
       const clampedProgress = Math.min(100, Math.max(0, progress));
@@ -123,11 +146,14 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
     };
 
     xhr.upload.onload = () => {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       setIsUploading(false);
       setIsProcessing(true);
     };
 
     xhr.onload = () => {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      xhrRef.current = null;
       setIsUploading(false);
       setIsProcessing(false);
 
@@ -182,9 +208,19 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
     };
 
     xhr.onerror = () => {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      xhrRef.current = null;
       setIsUploading(false);
       setIsProcessing(false);
       setError('Upload failed. Please check your connection.');
+    };
+
+    xhr.onabort = () => {
+      if (requestId !== requestIdRef.current) return;
+      xhrRef.current = null;
+      if (!mountedRef.current) return;
+      setIsUploading(false);
+      setIsProcessing(false);
     };
 
     xhr.send(formData);

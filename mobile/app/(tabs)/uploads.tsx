@@ -99,7 +99,7 @@ export default function UploadsScreen() {
           </Text>
         )}
 
-        <Button onPress={handleUpload} disabled={!selectedVideo || isUploading}>
+        <Button onPress={handleUpload} disabled={!selectedVideo || isUploading || isProcessing}>
           <Text>{isUploading ? 'Uploading...' : 'Upload & Analyze'}</Text>
         </Button>
 
