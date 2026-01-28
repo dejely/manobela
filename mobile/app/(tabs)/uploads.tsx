@@ -11,6 +11,9 @@ import { formatBytes, formatDuration } from '@/utils/videoFormatter';
 import { FileVideoCamera, UploadCloud } from 'lucide-react-native';
 import { useTheme } from '@react-navigation/native';
 import { UploadPlayback } from '@/components/upload-playback';
+import { MetricsDisplay } from '@/components/metrics/metrics-display';
+import { SessionState } from '@/hooks/useMonitoringSession';
+import { MetricsOutput } from '@/types/metrics';
 
 const BIG_FILE_SIZE_MB = 50;
 
@@ -47,6 +50,7 @@ export default function UploadsScreen() {
     overlayResolution,
     canRenderOverlay,
     hasOverlayData,
+    activeFrame,
   } = useUploadPlayback({
     result,
     selectedVideoUri: selectedVideo?.uri,
@@ -55,9 +59,56 @@ export default function UploadsScreen() {
     holdMs: 200,
   });
 
+  // Determine session state for metrics display
+  // Show as active whenever we have processed results, not just when playing
+  const sessionState: SessionState = useMemo(() => {
+    if (isUploading || isProcessing) return 'starting';
+    // Keep metrics active as long as we have result data
+    if (result) return 'active';
+    return 'idle';
+  }, [isUploading, isProcessing, result]);
+
+  // Get current metrics from active playback frame
+  // Fallback to first frame's metrics if no active frame is available yet
+  const currentMetrics = useMemo(() => {
+    if (activeFrame?.metrics) {
+      return activeFrame.metrics as unknown as MetricsOutput;
+    }
+    // Fallback to first frame if available
+    if (result?.frames?.length && result.frames[0]?.metrics) {
+      return result.frames[0].metrics as unknown as MetricsOutput;
+    }
+    return null;
+  }, [activeFrame, result]);
+
   return (
-    <ScrollView className="flex-1 px-4 py-4" contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView className="flex-1 px-2 py-1" contentContainerStyle={{ flexGrow: 1 }}>
       <View className="gap-3">
+        {result && (
+          <>
+            <UploadPlayback
+              result={result}
+              selectedVideoUri={selectedVideo?.uri}
+              player={player}
+              playbackAspectRatio={playbackAspectRatio}
+              playbackView={playbackView}
+              handlePlaybackLayout={handlePlaybackLayout}
+              overlayLandmarks={overlayLandmarks}
+              overlayDetections={overlayDetections}
+              overlayResolution={overlayResolution}
+              canRenderOverlay={canRenderOverlay}
+              hasOverlayData={hasOverlayData}
+              showOverlays={showOverlays}
+              onToggleOverlays={setShowOverlays}
+              faceMissing={
+                (currentMetrics as unknown as { face_missing?: boolean })?.face_missing ?? false
+              }
+            />
+
+            <MetricsDisplay sessionState={sessionState} metricsOutput={currentMetrics} />
+          </>
+        )}
+
         <Button onPress={handleSelectVideo} variant="secondary">
           <FileVideoCamera color={colors.primary} size={18} />
           <Text>Select Video</Text>
@@ -112,36 +163,16 @@ export default function UploadsScreen() {
         {error ? <Text className="text-sm text-destructive">Error: {error}</Text> : null}
 
         {result && (
-          <>
-            <View className="flex flex-row gap-3 rounded-md border border-border bg-muted/40 p-2">
-              <Text className="text-xs text-muted-foreground">
-                Frames Processed: {result.video_metadata.total_frames_processed}
-              </Text>
-              <Text className="text-xs text-muted-foreground">
-                FPS: {result.video_metadata.fps}
-              </Text>
-              <Text className="text-xs text-muted-foreground">
-                Resolution: {result.video_metadata.resolution.width}x
-                {result.video_metadata.resolution.height}
-              </Text>
-            </View>
-
-            <UploadPlayback
-              result={result}
-              selectedVideoUri={selectedVideo?.uri}
-              player={player}
-              playbackAspectRatio={playbackAspectRatio}
-              playbackView={playbackView}
-              handlePlaybackLayout={handlePlaybackLayout}
-              overlayLandmarks={overlayLandmarks}
-              overlayDetections={overlayDetections}
-              overlayResolution={overlayResolution}
-              canRenderOverlay={canRenderOverlay}
-              hasOverlayData={hasOverlayData}
-              showOverlays={showOverlays}
-              onToggleOverlays={setShowOverlays}
-            />
-          </>
+          <View className="flex flex-row gap-3 rounded-md border border-border bg-muted/40 p-2">
+            <Text className="text-xs text-muted-foreground">
+              Frames Processed: {result.video_metadata.total_frames_processed}
+            </Text>
+            <Text className="text-xs text-muted-foreground">FPS: {result.video_metadata.fps}</Text>
+            <Text className="text-xs text-muted-foreground">
+              Resolution: {result.video_metadata.resolution.width}x
+              {result.video_metadata.resolution.height}
+            </Text>
+          </View>
         )}
 
         {/* Spacer to avoid content being hidden behind bottom navigation */}

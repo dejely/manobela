@@ -4,13 +4,14 @@ import { SessionState } from '@/hooks/useMonitoringSession';
 import { CameraRecordButton } from './camera-record-button';
 import { FacialLandmarkOverlay } from './facial-landmark-overlay';
 import { ObjectDetectionOverlay } from './object-detection-overlay';
+import { OverlayToggleButton } from './overlay-toggle-button';
+import { FaceMissingIndicator } from './face-missing-indicator';
 import { InferenceData, ObjectDetection } from '@/types/inference';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@react-navigation/native';
 import { SpinningLogo } from './spinning-logo';
-import { Eye, EyeOff, Frown, Meh, ScanFace, UserIcon } from 'lucide-react-native';
+import { UserIcon } from 'lucide-react-native';
 
 type MediaStreamViewProps = {
   stream: MediaStream | null;
@@ -40,8 +41,6 @@ export const MediaStreamView = ({
   onRecalibrateHeadPose,
   recalibrateEnabled = true,
 }: MediaStreamViewProps) => {
-  const { colors } = useTheme();
-
   const [viewDimensions, setViewDimensions] = useState({ width: 0, height: 0 });
   const [showOverlay, setShowOverlay] = useState(true);
   const [smoothedDetections, setSmoothedDetections] = useState<ObjectDetection[] | null>(null);
@@ -154,14 +153,11 @@ export const MediaStreamView = ({
       {/* Bottom overlay */}
       <View className="absolute bottom-3 left-0 right-0 z-10 flex-row items-center justify-between px-4">
         {/* Overlay toggle */}
-        <Pressable
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={showOverlay ? 'Hide overlays' : 'Show overlays'}
-          onPress={() => setShowOverlay((v) => !v)}
-          className="h-9 w-9 items-center justify-center">
-          {showOverlay ? <Eye size={24} color="white" /> : <EyeOff size={24} color="white" />}
-        </Pressable>
+        <OverlayToggleButton
+          showOverlay={showOverlay}
+          onToggle={() => setShowOverlay((v) => !v)}
+          color="white"
+        />
 
         {/* Record button */}
         <View className="items-center">
@@ -198,16 +194,10 @@ export const MediaStreamView = ({
         </View>
 
         {/* Face missing indicator */}
-        <View className="h-9 w-9 items-center justify-center">
-          {sessionState !== 'active' ? (
-            <Meh size={24} color="white" />
-          ) : inferenceData?.metrics?.face_missing ? (
-            // @ts-ignore
-            <Frown size={24} color={colors.destructive} />
-          ) : (
-            <ScanFace size={24} color="white" />
-          )}
-        </View>
+        <FaceMissingIndicator
+          isActive={sessionState === 'active'}
+          faceMissing={inferenceData?.metrics?.face_missing ?? false}
+        />
 
         {/* Resolution */}
         <View className="min-w-[64px] flex-row items-center justify-center rounded-full bg-black/40 px-2 py-1">
