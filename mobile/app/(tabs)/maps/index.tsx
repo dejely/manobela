@@ -97,7 +97,12 @@ export default function MapsScreen() {
     handleLocationUpdate,
     formatDistanceMeters,
     formatTimeSeconds,
-  } = useNavigationManagement({ mapRef, route, isMapReady, onNavigationComplete: handleStopNavigation });
+  } = useNavigationManagement({
+    mapRef,
+    route,
+    isMapReady,
+    onNavigationComplete: handleStopNavigation,
+  });
 
   // Update ref with stopNavigation
   useEffect(() => {
@@ -136,7 +141,12 @@ export default function MapsScreen() {
     startNavigation();
 
     // Auto-start monitoring when navigation starts (if enabled)
-    if (settings.enableAutoCoordination && !useCoordinationStore.getState().isCoordinating) {
+    // Also check if monitoring is already active to avoid unnecessary coordination
+    if (
+      settings.enableAutoCoordination &&
+      !useCoordinationStore.getState().isCoordinating &&
+      !useCoordinationStore.getState().shouldStartMonitoring
+    ) {
       setCoordinating(true);
       requestMonitoringStart();
       // Navigate to monitor tab

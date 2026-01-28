@@ -88,11 +88,13 @@ export default function MonitorScreen() {
   }, [sessionState, start, handleStop]);
 
   // Auto-start navigation when monitoring starts (if enabled)
+  // Also check if navigation is already active to avoid unnecessary coordination
   useEffect(() => {
     if (
       settings.enableAutoCoordination &&
       sessionState === 'active' &&
-      !useCoordinationStore.getState().isCoordinating
+      !useCoordinationStore.getState().isCoordinating &&
+      !useCoordinationStore.getState().shouldStartNavigation
     ) {
       setCoordinating(true);
       requestNavigationStart();
