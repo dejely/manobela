@@ -20,7 +20,7 @@ export function useCamera(): UseCameraReturn {
     if (!stream) return false;
     const tracks = stream.getVideoTracks();
     if (tracks.length === 0) return false;
-    return tracks.every((track) => track.readyState === 'live');
+    return tracks.every((track) => track.readyState === 'live' && track.enabled);
   }, []);
 
   const stopStream = useCallback((stream: MediaStream | null) => {
