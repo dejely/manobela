@@ -19,6 +19,7 @@ type UseUploadPlaybackArgs = {
   selectedVideoUri?: string | null;
   showOverlays: boolean;
   holdMs?: number;
+  updateIntervalMs?: number;
   player?: VideoPlayer | null;
 };
 
@@ -39,12 +40,14 @@ type UseUploadPlaybackResult = {
 };
 
 const DEFAULT_HOLD_MS = 450;
+const DEFAULT_UPDATE_INTERVAL_MS = 100;
 
 export const useUploadPlayback = ({
   result,
   selectedVideoUri,
   showOverlays,
   holdMs = DEFAULT_HOLD_MS,
+  updateIntervalMs = DEFAULT_UPDATE_INTERVAL_MS,
   player,
 }: UseUploadPlaybackArgs): UseUploadPlaybackResult => {
   const [playbackPositionMs, setPlaybackPositionMs] = useState(0);
@@ -105,23 +108,24 @@ export const useUploadPlayback = ({
       updateDuration(Math.round(player.duration * 1000));
     }
 
-    const timeSub = player.addListener('timeUpdate', (payload) => {
-      if (!Number.isFinite(payload.currentTime)) return;
-      updatePosition(Math.max(0, Math.round(payload.currentTime * 1000)));
-    });
-
     const sourceSub = player.addListener('sourceLoad', (payload) => {
       if (Number.isFinite(payload.duration) && payload.duration > 0) {
         updateDuration(Math.round(payload.duration * 1000));
       }
     });
 
+    const intervalId = setInterval(() => {
+      const currentTime = player.currentTime;
+      if (!Number.isFinite(currentTime)) return;
+      updatePosition(Math.max(0, Math.round(currentTime * 1000)));
+    }, updateIntervalMs);
+
     return () => {
       mounted = false;
-      timeSub.remove();
+      clearInterval(intervalId);
       sourceSub.remove();
     };
-  }, [player]);
+  }, [player, updateIntervalMs]);
 
   const handlePlaybackLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

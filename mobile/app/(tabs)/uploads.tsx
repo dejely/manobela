@@ -37,6 +37,8 @@ export default function UploadsScreen() {
     handleUpload,
   } = useVideoUpload(apiBaseUrl);
 
+
+
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({});
   const [showOverlays, setShowOverlays] = useState(true);
   const player = useMemo(() => createVideoPlayer(null), []);
@@ -69,6 +71,7 @@ export default function UploadsScreen() {
     showOverlays,
     player,
     holdMs: 200,
+    updateIntervalMs: 100,
   });
 
   return (
