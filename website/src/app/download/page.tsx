@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
-import { useMemo } from 'react';
+import Link from 'next/link';
+import QRCode from 'react-qr-code';
 import { LandingNavbar } from '@/components/navbar';
 import { LandingFooter } from '@/components/footer';
-
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-
-import QRCode from 'react-qr-code';
-import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Download Manobela',
