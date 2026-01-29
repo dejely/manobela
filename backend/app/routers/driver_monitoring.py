@@ -149,20 +149,6 @@ async def driver_monitoring(
             await pc.close()
 
 
-@router.get("/connections")
-async def connections(
-    connection_manager: ConnectionManagerDep,
-):
-    """
-    Returns an overview of active driver monitoring sessions and resources.
-    """
-    return {
-        "active_connections": len(connection_manager.active_connections),
-        "peer_connections": len(connection_manager.peer_connections),
-        "data_channels": len(connection_manager.data_channels),
-        "frame_tasks": len(connection_manager.frame_tasks),
-    }
-
 @router.post(
     "/driver-monitoring/process-video",
     summary="Upload and process video",
