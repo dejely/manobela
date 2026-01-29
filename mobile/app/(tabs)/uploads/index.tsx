@@ -47,7 +47,6 @@ export default function UploadsScreen() {
     handlePlaybackLayout,
     overlayLandmarks,
     overlayDetections,
-    overlayResolution,
     canRenderOverlay,
     activeFrame,
   } = useUploadPlayback({
@@ -92,7 +91,6 @@ export default function UploadsScreen() {
               handlePlaybackLayout={handlePlaybackLayout}
               overlayLandmarks={overlayLandmarks}
               overlayDetections={overlayDetections}
-              overlayResolution={overlayResolution}
               canRenderOverlay={canRenderOverlay}
               showOverlays={showOverlays}
               onToggleOverlays={setShowOverlays}

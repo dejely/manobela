@@ -30,7 +30,6 @@ type UseUploadPlaybackResult = {
   handlePlaybackLayout: (event: LayoutChangeEvent) => void;
   overlayLandmarks: number[] | null;
   overlayDetections: ObjectDetection[] | null;
-  overlayResolution: { width: number; height: number } | null;
   canRenderOverlay: boolean;
   hasOverlayData: boolean;
 };
@@ -159,11 +158,9 @@ export const useUploadPlayback = ({
     });
   }, [activeFrame, playbackPositionMs, showOverlays, holdMs]);
 
-  const overlayResolution = result?.video_metadata?.resolution ?? null;
   const overlayLandmarks = showOverlays ? (overlaySnapshot?.landmarks ?? null) : null;
   const overlayDetections = showOverlays ? (overlaySnapshot?.detections ?? null) : null;
-  const canRenderOverlay =
-    Boolean(overlayResolution) && playbackView.width > 0 && playbackView.height > 0;
+  const canRenderOverlay = playbackView.width > 0 && playbackView.height > 0;
   const hasOverlayData = Boolean(overlayLandmarks?.length) || Boolean(overlayDetections?.length);
 
   const totalDurationMs =
@@ -181,7 +178,6 @@ export const useUploadPlayback = ({
     handlePlaybackLayout,
     overlayLandmarks,
     overlayDetections,
-    overlayResolution,
     canRenderOverlay,
     hasOverlayData,
   };
