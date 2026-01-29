@@ -25,5 +25,4 @@ export type VideoFrameResult = {
   face_landmarks: number[] | null;
   object_detections: ObjectDetection[] | null;
   metrics: Record<string, unknown> | null;
-  thumbnail_base64: string | null;
 };
