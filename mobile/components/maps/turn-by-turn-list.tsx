@@ -40,7 +40,10 @@ export const TurnByTurnList = ({
     <BottomSheetFlatList
       data={visibleSteps}
       keyExtractor={(item: TurnItem) => item.index.toString()}
-      className="max-h-40"
+      className="h-40"
+      scrollEnabled={true}
+      nestedScrollEnabled={true}
+      showsVerticalScrollIndicator={true}
       contentContainerClassName="gap-2"
       renderItem={({ item }: { item: TurnItem }) => (
         <View className="gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2">
