@@ -1,5 +1,22 @@
 import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
 
+// Extend React Navigation's Theme colors to include destructive
+declare global {
+  namespace ReactNavigation {
+    interface Theme {
+      colors: {
+        primary: string;
+        background: string;
+        card: string;
+        text: string;
+        border: string;
+        notification: string;
+        destructive: string;
+      };
+    }
+  }
+}
+
 export const THEME = {
   light: {
     background: 'hsl(0 0% 100%)',

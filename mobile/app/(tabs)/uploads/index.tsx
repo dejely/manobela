@@ -47,9 +47,7 @@ export default function UploadsScreen() {
     handlePlaybackLayout,
     overlayLandmarks,
     overlayDetections,
-    overlayResolution,
     canRenderOverlay,
-    hasOverlayData,
     activeFrame,
   } = useUploadPlayback({
     result,
@@ -69,7 +67,6 @@ export default function UploadsScreen() {
   }, [isUploading, isProcessing, result]);
 
   // Get current metrics from active playback frame
-  // Fallback to first frame's metrics if no active frame is available yet
   const currentMetrics = useMemo(() => {
     if (activeFrame?.metrics) {
       return activeFrame.metrics as unknown as MetricsOutput;
@@ -87,7 +84,6 @@ export default function UploadsScreen() {
         {result && (
           <>
             <UploadPlayback
-              result={result}
               selectedVideoUri={selectedVideo?.uri}
               player={player}
               playbackAspectRatio={playbackAspectRatio}
@@ -95,9 +91,7 @@ export default function UploadsScreen() {
               handlePlaybackLayout={handlePlaybackLayout}
               overlayLandmarks={overlayLandmarks}
               overlayDetections={overlayDetections}
-              overlayResolution={overlayResolution}
               canRenderOverlay={canRenderOverlay}
-              hasOverlayData={hasOverlayData}
               showOverlays={showOverlays}
               onToggleOverlays={setShowOverlays}
               faceMissing={

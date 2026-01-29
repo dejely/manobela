@@ -47,9 +47,14 @@ RATE_LIMIT_WINDOW_SEC = 60
 ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov"}
 _last_upload_by_ip: dict[str, float] = {}
 
+
 class ConnectionsResponse(BaseModel):
-    active_connections: int = Field(..., description="Number of active WebSocket connections")
-    peer_connections: int = Field(..., description="Number of active RTCPeerConnections")
+    active_connections: int = Field(
+        ..., description="Number of active WebSocket connections"
+    )
+    peer_connections: int = Field(
+        ..., description="Number of active RTCPeerConnections"
+    )
     data_channels: int = Field(..., description="Number of active WebRTC DataChannels")
     frame_tasks: int = Field(..., description="Number of active frame-processing tasks")
 
@@ -149,20 +154,6 @@ async def driver_monitoring(
             await pc.close()
 
 
-@router.get("/connections")
-async def connections(
-    connection_manager: ConnectionManagerDep,
-):
-    """
-    Returns an overview of active driver monitoring sessions and resources.
-    """
-    return {
-        "active_connections": len(connection_manager.active_connections),
-        "peer_connections": len(connection_manager.peer_connections),
-        "data_channels": len(connection_manager.data_channels),
-        "frame_tasks": len(connection_manager.frame_tasks),
-    }
-
 @router.post(
     "/driver-monitoring/process-video",
     summary="Upload and process video",
@@ -219,7 +210,9 @@ async def process_video_upload(
                     break
                 total_size += len(chunk)
                 if total_size > MAX_UPLOAD_SIZE_BYTES:
-                    raise HTTPException(status_code=413, detail="File exceeds size limit.")
+                    raise HTTPException(
+                        status_code=413, detail="File exceeds size limit."
+                    )
                 temp_file.write(chunk)
 
         loop = asyncio.get_running_loop()

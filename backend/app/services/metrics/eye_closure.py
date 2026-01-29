@@ -141,4 +141,6 @@ class EyeClosureMetric(BaseMetric):
         )
 
     def _calc_sustained(self) -> float:
-        return min(self._eye_closed_duration_frames / self._min_eye_closed_duration_frames, 1.0)
+        return min(
+            self._eye_closed_duration_frames / self._min_eye_closed_duration_frames, 1.0
+        )

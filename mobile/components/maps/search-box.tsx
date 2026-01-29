@@ -100,7 +100,6 @@ export const SearchBox: React.FC<
   style,
   containerStyle,
   maxResults = 5,
-  showCurrentLocation = true, // restored from original
   autoComplete = true,
   debounceMs = 300,
   theme,

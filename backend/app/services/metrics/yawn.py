@@ -18,6 +18,7 @@ class YawnMetricOutput(MetricOutputBase, total=False):
         yawn_sustained: Fraction of time the mouth has been continuously open.
         yawn_count: Number of yawns detected in the current frame.
     """
+
     mar: Optional[float]
     yawning: bool
     yawn_sustained: float

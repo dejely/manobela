@@ -11,6 +11,7 @@ class PhoneUsageMetricOutput(MetricOutputBase, total=False):
         phone_usage: Whether phone detection has been sustained for at least min_usage_duration_sec.
         phone_usage_sustained: Fraction of the minimum required detection frames accumulated.
     """
+
     phone_usage: bool
     phone_usage_sustained: float
 
@@ -65,9 +66,7 @@ class PhoneUsageMetric(BaseMetric):
         )
 
         if phone_detected:
-            self._usage_counter = min(
-                self._usage_counter + 1, self._min_usage_frames
-            )
+            self._usage_counter = min(self._usage_counter + 1, self._min_usage_frames)
             self._miss_counter = 0
         else:
             self._miss_counter += 1

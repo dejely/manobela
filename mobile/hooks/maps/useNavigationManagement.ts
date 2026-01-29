@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { OSMViewRef, Route, RouteStep } from 'expo-osm-sdk';
 import type { Coordinate } from '@/types/maps';
-import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
 
 interface NavigationState {
   isNavigating: boolean;

@@ -22,11 +22,17 @@ MAX_WIDTH = 480
 
 @dataclass
 class VideoProcessingResult:
+    """
+    Result of processing an uploaded video.
+    """
     metadata: VideoMetadata
     frames: list[VideoFrameResult]
 
 
 def format_timestamp(seconds: float) -> str:
+    """
+    Format a timestamp in seconds as a string.
+    """
     total_ms = int(seconds * 1000)
     ms = total_ms % 1000
     total_seconds = total_ms // 1000
@@ -44,6 +50,10 @@ def process_uploaded_video(
     face_landmarker: FaceLandmarker,
     object_detector: ObjectDetector,
 ) -> VideoProcessingResult:
+    """
+    Process an uploaded video file and extract frame-level data.
+    """
+
     cap = cv2.VideoCapture(file_path)
     if not cap.isOpened():
         raise ValueError("Invalid video file")
@@ -80,7 +90,6 @@ def process_uploaded_video(
     target_interval = 1.0 / max(1, target_fps)
 
     try:
-
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -90,8 +99,7 @@ def process_uploaded_video(
             timestamp_sec = (
                 timestamp_ms / 1000.0
                 if timestamp_ms and timestamp_ms > 0
-                else (cap.get(cv2.CAP_PROP_POS_FRAMES) or 0.0)
-                / source_fps
+                else (cap.get(cv2.CAP_PROP_POS_FRAMES) or 0.0) / source_fps
                 if source_fps > 0
                 else last_timestamp_sec + target_interval
             )
@@ -128,12 +136,6 @@ def process_uploaded_video(
                 face_landmarks=face_landmarks, object_detections=object_detections
             )
             metrics = metric_manager.update(frame_context)
-            has_alert = any(
-                key.endswith("_alert")
-                and isinstance(value, bool)
-                and value
-                for key, value in metrics.items()
-            )
 
             frames.append(
                 VideoFrameResult(

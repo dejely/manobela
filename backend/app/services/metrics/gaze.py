@@ -21,6 +21,7 @@ class GazeMetricOutput(MetricOutputBase, total=False):
         gaze_alert: Whether gaze has been outside the configured range for at least min_sustained_sec.
         gaze_sustained: Fraction of time the gaze has been continuous.
     """
+
     gaze_alert: bool
     gaze_sustained: float
 
@@ -97,14 +98,10 @@ class GazeMetric(BaseMetric):
             right_ratio_raw = right_eye_gaze_ratio(landmarks)
 
             left_ratio = (
-                self.left_smoother.update(left_ratio_raw)
-                if left_ratio_raw
-                else None
+                self.left_smoother.update(left_ratio_raw) if left_ratio_raw else None
             )
             right_ratio = (
-                self.right_smoother.update(right_ratio_raw)
-                if right_ratio_raw
-                else None
+                self.right_smoother.update(right_ratio_raw) if right_ratio_raw else None
             )
 
         except (IndexError, ZeroDivisionError) as exc:

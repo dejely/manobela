@@ -12,11 +12,6 @@ logger = logging.getLogger(__name__)
 class HeadPoseMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
-    """
-    """
-  Output schema for the head pose metric.
-
-  Attributes:
       yaw_alert: Whether the relative yaw angle deviates from threshold.
       pitch_alert: Whether the relative pitch angle deviates from threshold.
       roll_alert: Whether the relative roll angle deviates from threshold.
@@ -268,4 +263,8 @@ class HeadPoseMetric(BaseMetric):
         }
 
     def _calc_sustained(self) -> float:
-        return min(max(self.yaw_counter, self.pitch_counter, self.roll_counter) / self.min_sustained_frames, 1.0)
+        return min(
+            max(self.yaw_counter, self.pitch_counter, self.roll_counter)
+            / self.min_sustained_frames,
+            1.0,
+        )

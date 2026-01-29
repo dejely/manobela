@@ -6,12 +6,6 @@ import { OverlayToggleButton } from '@/components/overlay-toggle-button';
 import { FaceMissingIndicator } from '@/components/face-missing-indicator';
 
 interface UploadPlaybackProps {
-  result: {
-    video_metadata: {
-      fps: number;
-      resolution: { width: number; height: number };
-    };
-  };
   selectedVideoUri?: string;
   player: any;
   playbackAspectRatio: number;
@@ -19,16 +13,13 @@ interface UploadPlaybackProps {
   handlePlaybackLayout: (event: any) => void;
   overlayLandmarks?: unknown;
   overlayDetections?: unknown;
-  overlayResolution?: { width: number; height: number } | null;
   canRenderOverlay: boolean;
-  hasOverlayData: boolean;
   showOverlays: boolean;
   onToggleOverlays: (show: boolean) => void;
   faceMissing?: boolean;
 }
 
 export function UploadPlayback({
-  result,
   selectedVideoUri,
   player,
   playbackAspectRatio,
@@ -36,9 +27,7 @@ export function UploadPlayback({
   handlePlaybackLayout,
   overlayLandmarks,
   overlayDetections,
-  overlayResolution,
   canRenderOverlay,
-  hasOverlayData,
   showOverlays,
   onToggleOverlays,
   faceMissing = false,
@@ -48,6 +37,7 @@ export function UploadPlayback({
       className="relative overflow-hidden rounded-md border border-border bg-black"
       style={{ width: '100%', aspectRatio: playbackAspectRatio }}
       onLayout={handlePlaybackLayout}>
+      {/* Video playback */}
       {selectedVideoUri ? (
         <VideoView
           player={player}
@@ -56,13 +46,15 @@ export function UploadPlayback({
           nativeControls
         />
       ) : null}
+
+      {/* Overlays */}
       {canRenderOverlay ? (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           {overlayLandmarks && Array.isArray(overlayLandmarks) ? (
             <FacialLandmarkOverlay
               landmarks={overlayLandmarks}
-              videoWidth={overlayResolution?.width ?? 0}
-              videoHeight={overlayResolution?.height ?? 0}
+              videoWidth={1}
+              videoHeight={1}
               viewWidth={playbackView.width}
               viewHeight={playbackView.height}
               mirror={false}
@@ -71,8 +63,8 @@ export function UploadPlayback({
           {overlayDetections && Array.isArray(overlayDetections) ? (
             <ObjectDetectionOverlay
               detections={overlayDetections}
-              videoWidth={overlayResolution?.width ?? 0}
-              videoHeight={overlayResolution?.height ?? 0}
+              videoWidth={1}
+              videoHeight={1}
               viewWidth={playbackView.width}
               viewHeight={playbackView.height}
               mirror={false}

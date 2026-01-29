@@ -24,7 +24,7 @@ export default function RootLayout() {
     <DatabaseProvider>
       <SettingsProvider>
         <InsightRefreshProvider>
-          <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+          <ThemeProvider value={NAV_THEME[colorScheme ?? 'light'] as any}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               <Stack>

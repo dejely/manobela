@@ -21,15 +21,13 @@ class IceServersResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "iceServers": [
-                    {
-                        "urls": "stun:stun.l.google.com:19302"
-                    },
+                    {"urls": "stun:stun.l.google.com:19302"},
                     {
                         "urls": "turn:turn.example.com:3478",
                         "username": "user",
                         "credential": "pass",
-                        "credentialType": "password"
-                    }
+                        "credentialType": "password",
+                    },
                 ]
             }
         }

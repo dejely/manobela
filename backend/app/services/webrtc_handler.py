@@ -85,7 +85,9 @@ async def create_peer_connection(
                 try:
                     message = message.decode("utf-8")
                 except Exception:
-                    logger.warning("Failed to decode data channel message from %s", client_id)
+                    logger.warning(
+                        "Failed to decode data channel message from %s", client_id
+                    )
                     return
 
             if isinstance(message, str):
@@ -94,7 +96,10 @@ async def create_peer_connection(
                 except json.JSONDecodeError:
                     return
 
-            if isinstance(payload, dict) and payload.get("type") == "monitoring-control":
+            if (
+                isinstance(payload, dict)
+                and payload.get("type") == "monitoring-control"
+            ):
                 action = payload.get("action")
                 if action == "pause":
                     connection_manager.processing_paused[client_id] = True
@@ -116,7 +121,9 @@ async def create_peer_connection(
                     payload = payload.decode("utf-8")
                 data = json.loads(payload)
             except (TypeError, ValueError, UnicodeDecodeError):
-                logger.debug("Ignoring non-JSON data channel message from %s", client_id)
+                logger.debug(
+                    "Ignoring non-JSON data channel message from %s", client_id
+                )
                 return
 
             if data.get("type") == "head_pose_recalibrate":

@@ -134,7 +134,6 @@ def compute_pitch_angle(landmarks: Sequence[FaceLandmark2D]) -> float:
     PITCH_SCALE = 100.0
     pitch = -offset * PITCH_SCALE
 
-
     return pitch
 
 

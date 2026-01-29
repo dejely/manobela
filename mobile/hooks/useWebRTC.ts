@@ -72,13 +72,12 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   const dataChannelHandlers = useRef<((msg: any) => void)[]>([]);
 
   const wasOfflineRef = useRef(false);
-  const [isOffline, setIsOffline] = useState(false);
   const isOfflineRef = useRef(false);
 
   // Last fatal error encountered anywhere in the stack
   const [error, setError] = useState<string | null>(null);
 
-  // --- Specified error block ---
+  // Specified error block
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const setErrorState = useCallback((message: string, rawMessage?: string | null) => {
     const normalizedMessage = message || null;
@@ -97,7 +96,6 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
     },
     [setErrorState]
   );
-  // ------ Specified Error Block end ------
 
   // Allow external subscribers to observe raw signaling traffic
   const onSignalingMessage = useCallback((handler: (msg: SignalingMessage) => void) => {
@@ -439,14 +437,12 @@ export const useWebRTC = ({ url, stream }: UseWebRTCProps): UseWebRTCReturn => {
   }, [setErrorState]);
 
   const transportStatus: TransportStatus = transportRef.current?.status ?? 'closed';
-  const hasExitedRef = useRef(false);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       const offlineNow = state.isConnected === false || state.isInternetReachable === false;
 
       isOfflineRef.current = offlineNow;
-      setIsOffline(offlineNow);
 
       // Only run teardown + error once per offline transition
       if (offlineNow && !wasOfflineRef.current) {

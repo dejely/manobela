@@ -14,7 +14,9 @@ class FaceMissingState:
 
     DEFAULT_MIN_MISSING_DURATION_SEC = 0.5
 
-    def __init__(self, min_missing_duration_sec: float = DEFAULT_MIN_MISSING_DURATION_SEC):
+    def __init__(
+        self, min_missing_duration_sec: float = DEFAULT_MIN_MISSING_DURATION_SEC
+    ):
         if min_missing_duration_sec <= 0:
             raise ValueError("min_missing_duration_sec must be positive")
 
@@ -25,7 +27,9 @@ class FaceMissingState:
         self._face_missing = False
 
     def update(self, context: FrameContext) -> bool:
-        detected = context.face_landmarks is not None and len(context.face_landmarks) > 0
+        detected = (
+            context.face_landmarks is not None and len(context.face_landmarks) > 0
+        )
 
         if not detected:
             self._missing_frames += 1
