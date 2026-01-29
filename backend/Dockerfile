@@ -18,6 +18,9 @@ ENV UV_NO_DEV=1
 # Install dependencies into the project .venv via uv
 RUN uv sync --frozen --no-cache
 
+# Ensure venv executables (e.g., uvicorn) are on PATH at runtime.
+ENV PATH="/app/.venv/bin:${PATH}"
+
 # Copy the rest of the application source
 COPY . /app
 
