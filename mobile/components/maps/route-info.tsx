@@ -54,7 +54,7 @@ export function RouteInfo({ route }: RouteInfoProps) {
       {turnInstructions.length > 0 && (
         <View>
           <Text className="mb-2 text-sm font-semibold">Steps</Text>
-          <TurnByTurnList turnInstructions={turnInstructions} />
+          <TurnByTurnList turnInstructions={turnInstructions} maxSteps={4} />
         </View>
       )}
     </View>

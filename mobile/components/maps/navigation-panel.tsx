@@ -14,6 +14,7 @@ interface NavigationPanelProps {
   timeRemaining: number;
   nextTurnInstruction: string;
   progress: number;
+  currentStepIndex: number;
   turnInstructions: RouteStep[];
   onStopNavigation: () => void;
 }
@@ -24,6 +25,7 @@ export const NavigationPanel = ({
   timeRemaining,
   nextTurnInstruction,
   progress,
+  currentStepIndex,
   turnInstructions,
   onStopNavigation,
 }: NavigationPanelProps) => {
@@ -76,7 +78,11 @@ export const NavigationPanel = ({
       {/* Turn-by-turn list */}
       <View className="mb-4">
         <Text className="mb-2 text-sm font-semibold">Steps</Text>
-        <TurnByTurnList turnInstructions={turnInstructions} />
+        <TurnByTurnList
+          turnInstructions={turnInstructions}
+          currentStepIndex={currentStepIndex}
+          maxSteps={6}
+        />
       </View>
     </View>
   );

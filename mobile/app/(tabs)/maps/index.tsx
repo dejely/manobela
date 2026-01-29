@@ -305,6 +305,7 @@ export default function MapsScreen() {
               timeRemaining={navigationState.timeRemaining}
               nextTurnInstruction={navigationState.nextTurnInstruction}
               progress={navigationState.progress}
+              currentStepIndex={navigationState.currentStepIndex}
               turnInstructions={turnInstructions}
               onStopNavigation={handleStopNavigation}
             />
