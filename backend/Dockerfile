@@ -25,7 +25,8 @@ COPY . /app
 EXPOSE 8000
 
 # Run the app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Prefer Azure's WEBSITES_PORT when present; fall back to PORT, then 8000.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${WEBSITES_PORT:-${PORT:-8000}}"]
 
 
 
