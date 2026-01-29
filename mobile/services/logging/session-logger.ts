@@ -158,6 +158,10 @@ export const sessionLogger = {
    */
   logUploadedVideo: async (videoResult: VideoProcessingResponse, videoName: string) => {
     if (readOnly || !userLoggingEnabled) return null; // blocks writes if read-only or user disabled logging
+    if (!videoResult.frames || videoResult.frames.length === 0) {
+      console.warn('No frames available to log for uploaded video');
+      return null;
+    }
 
     const sessionId = uuid.v4();
     const startedAt = Date.now();
@@ -176,16 +180,23 @@ export const sessionLogger = {
           sessionType: 'upload',
         } as NewSession);
 
-        // Process groups and create metrics from aggregated data
+        // Process frames and create metrics
         const metricsToInsert: NewMetric[] = [];
 
-        for (const group of videoResult.groups) {
-          if (!group.aggregate.metrics) continue;
+        for (const frame of videoResult.frames) {
+          if (!frame.metrics) continue;
 
-          const m = group.aggregate.metrics as any;
-          // Use the middle timestamp of the group interval
-          const groupMidpointSec = (group.start_sec + group.end_sec) / 2;
-          const timestamp = startedAt + groupMidpointSec * 1000;
+          const m = frame.metrics as any;
+          // Parse frame timestamp (format: "HH:MM:SS.mmm")
+          const timestampMatch = frame.timestamp.match(/(\d+):(\d+):(\d+)\.(\d+)/);
+          if (!timestampMatch) continue;
+
+          const hours = parseInt(timestampMatch[1], 10);
+          const minutes = parseInt(timestampMatch[2], 10);
+          const seconds = parseInt(timestampMatch[3], 10);
+          const milliseconds = parseInt(timestampMatch[4], 10);
+          const timestampSec = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+          const timestamp = startedAt + timestampSec * 1000;
 
           metricsToInsert.push({
             id: uuid.v4(),

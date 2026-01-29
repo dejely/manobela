@@ -6,7 +6,6 @@ import cv2
 
 from app.models.video_upload import (
     Resolution,
-    VideoFrameGroup,
     VideoFrameResult,
     VideoMetadata,
 )
@@ -16,11 +15,6 @@ from app.services.metrics.frame_context import FrameContext
 from app.services.metrics.metric_manager import MetricManager
 from app.services.object_detector import ObjectDetector
 from app.services.smoother import SequenceSmoother
-from app.services.video_aggregation import (
-    BucketAccumulator,
-    finalize_bucket,
-    update_detections,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +25,6 @@ THUMBNAIL_JPEG_QUALITY = 70
 @dataclass
 class VideoProcessingResult:
     metadata: VideoMetadata
-    groups: list[VideoFrameGroup]
     frames: list[VideoFrameResult] | None = None
 
 
@@ -58,7 +51,6 @@ def process_uploaded_video(
     *,
     target_fps: int,
     max_duration_sec: float,
-    group_interval_sec: float,
     face_landmarker: FaceLandmarker,
     object_detector: ObjectDetector,
     include_frames: bool = False,
@@ -86,19 +78,11 @@ def process_uploaded_video(
     smoother = SequenceSmoother(alpha=0.8, max_missing=5)
 
     frames: list[VideoFrameResult] | None = [] if include_frames else None
-    groups: list[VideoFrameGroup] = []
-    current_bucket: BucketAccumulator | None = None
 
     frame_number = 0
     next_target_time = 0.0
     last_timestamp_sec = 0.0
     target_interval = 1.0 / max(1, target_fps)
-
-    def flush_bucket():
-        nonlocal current_bucket
-        if current_bucket:
-            groups.append(finalize_bucket(current_bucket))
-            current_bucket = None
 
     try:
 
@@ -161,42 +145,6 @@ def process_uploaded_video(
                 else None
             )
 
-            bucket_index = int(timestamp_sec // group_interval_sec)
-            if current_bucket is None or bucket_index != current_bucket.bucket_index:
-                flush_bucket()
-                start_sec = bucket_index * group_interval_sec
-                end_sec = start_sec + group_interval_sec
-                current_bucket = BucketAccumulator(
-                    bucket_index=bucket_index,
-                    start_sec=start_sec,
-                    end_sec=end_sec,
-                )
-
-            current_bucket.frame_count += 1
-            if current_bucket.resolution is None:
-                current_bucket.resolution = Resolution(width=w, height=h)
-
-            if has_face and smoothed_landmarks:
-                if (
-                    current_bucket.landmarks_sum is None
-                    or len(current_bucket.landmarks_sum) != len(smoothed_landmarks)
-                ):
-                    current_bucket.landmarks_sum = [0.0] * len(smoothed_landmarks)
-                    current_bucket.landmarks_count = 0
-                if len(smoothed_landmarks) == len(current_bucket.landmarks_sum):
-                    for index, value in enumerate(smoothed_landmarks):
-                        current_bucket.landmarks_sum[index] += float(value)
-                    current_bucket.landmarks_count += 1
-
-            if object_detections:
-                update_detections(current_bucket.detections, object_detections)
-
-            if metrics:
-                current_bucket.metrics.append(metrics)
-
-            if thumbnail_base64 and current_bucket.thumbnail_base64 is None:
-                current_bucket.thumbnail_base64 = thumbnail_base64
-
             if include_frames and frames is not None:
                 frames.append(
                     VideoFrameResult(
@@ -219,8 +167,6 @@ def process_uploaded_video(
     finally:
         cap.release()
 
-    flush_bucket()
-
     if duration_sec <= 0:
         duration_sec = last_timestamp_sec
 
@@ -234,4 +180,4 @@ def process_uploaded_video(
         resolution=Resolution(width=source_width, height=source_height),
     )
 
-    return VideoProcessingResult(metadata=metadata, groups=groups, frames=frames)
+    return VideoProcessingResult(metadata=metadata, frames=frames)

@@ -23,8 +23,6 @@ type UseUploadPlaybackArgs = {
 };
 
 type UseUploadPlaybackResult = {
-  groups: VideoProcessingResponse['groups'];
-  activeGroup: VideoProcessingResponse['groups'][number] | null;
   activeFrame: FrameWithTimestamp | null;
   playbackAspectRatio: number;
   playbackPositionMs: number;
@@ -36,7 +34,6 @@ type UseUploadPlaybackResult = {
   overlayResolution: { width: number; height: number } | null;
   canRenderOverlay: boolean;
   hasOverlayData: boolean;
-  groupIntervalSec: number;
 };
 
 const DEFAULT_HOLD_MS = 450;
@@ -53,11 +50,6 @@ export const useUploadPlayback = ({
   const [playbackView, setPlaybackView] = useState({ width: 0, height: 0 });
   const [overlaySnapshot, setOverlaySnapshot] = useState<OverlaySnapshot | null>(null);
 
-  const groups = useMemo(() => result?.groups ?? [], [result]);
-  const sortedGroups = useMemo(
-    () => [...groups].sort((a, b) => a.start_sec - b.start_sec),
-    [groups]
-  );
   const framesWithTime = useMemo<FrameWithTimestamp[]>(() => {
     if (!result?.frames?.length) return [];
     return result.frames
@@ -134,22 +126,12 @@ export const useUploadPlayback = ({
     return width / height;
   }, [result?.video_metadata?.resolution?.width, result?.video_metadata?.resolution?.height]);
 
-  const playbackSeconds = playbackPositionMs / 1000;
-  const activeGroup = useMemo(() => {
-    if (sortedGroups.length === 0) return null;
-    const match = sortedGroups.find(
-      (group) => playbackSeconds >= group.start_sec && playbackSeconds < group.end_sec
-    );
-    if (match) return match;
-    if (playbackSeconds < sortedGroups[0].start_sec) return sortedGroups[0];
-    return sortedGroups[sortedGroups.length - 1];
-  }, [playbackSeconds, sortedGroups]);
-
   const activeFrame = useMemo<FrameWithTimestamp | null>(() => {
     if (framesWithTime.length === 0) return null;
+    const playbackSeconds = playbackPositionMs / 1000;
     const index = findNearestFrameIndex(framesWithTime, playbackSeconds);
     return index === null ? null : framesWithTime[index];
-  }, [framesWithTime, playbackSeconds]);
+  }, [framesWithTime, playbackPositionMs]);
 
   useEffect(() => {
     if (!showOverlays || !activeFrame) {
@@ -179,25 +161,13 @@ export const useUploadPlayback = ({
     });
   }, [activeFrame, playbackPositionMs, showOverlays, holdMs]);
 
-  const fallbackLandmarks = activeGroup?.aggregate.face_landmarks ?? null;
-  const fallbackDetections = activeGroup?.aggregate.object_detections ?? null;
-
   const overlayResolution =
     overlaySnapshot?.resolution ??
     activeFrame?.resolution ??
-    activeGroup?.aggregate.resolution ??
     result?.video_metadata?.resolution ??
     null;
-  const overlayLandmarks = showOverlays
-    ? overlaySnapshot
-      ? overlaySnapshot.landmarks
-      : fallbackLandmarks
-    : null;
-  const overlayDetections = showOverlays
-    ? overlaySnapshot
-      ? overlaySnapshot.detections
-      : fallbackDetections
-    : null;
+  const overlayLandmarks = showOverlays ? (overlaySnapshot?.landmarks ?? null) : null;
+  const overlayDetections = showOverlays ? (overlaySnapshot?.detections ?? null) : null;
   const canRenderOverlay =
     Boolean(overlayResolution) && playbackView.width > 0 && playbackView.height > 0;
   const hasOverlayData = Boolean(overlayLandmarks?.length) || Boolean(overlayDetections?.length);
@@ -207,12 +177,8 @@ export const useUploadPlayback = ({
     (result?.video_metadata?.duration_sec
       ? Math.round(result.video_metadata.duration_sec * 1000)
       : null);
-  const groupIntervalSec =
-    sortedGroups.length > 0 ? Math.round(sortedGroups[0].end_sec - sortedGroups[0].start_sec) : 0;
 
   return {
-    groups,
-    activeGroup,
     activeFrame,
     playbackAspectRatio,
     playbackPositionMs,
@@ -224,6 +190,5 @@ export const useUploadPlayback = ({
     overlayResolution,
     canRenderOverlay,
     hasOverlayData,
-    groupIntervalSec,
   };
 };
