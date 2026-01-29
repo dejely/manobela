@@ -69,12 +69,6 @@ export const useNavigationManagement = ({
   const navigationArrowIdRef = useRef<string>('navigation-arrow');
   const stopNavigationRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Format distance in meters to human-readable string
-  const formatDistanceMetersCallback = useCallback(formatDistanceMeters, []);
-
-  // Format time in seconds to human-readable string
-  const formatTimeSecondsCallback = useCallback(formatTimeSeconds, []);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
