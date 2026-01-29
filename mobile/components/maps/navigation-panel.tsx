@@ -1,8 +1,12 @@
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import { Navigation } from 'lucide-react-native';
 import { useTheme } from '@react-navigation/native';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Text } from '@/components/ui/text';
+import { TurnByTurnList } from '@/components/maps/turn-by-turn-list';
+import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
+import type { RouteStep } from 'expo-osm-sdk';
 
 interface NavigationPanelProps {
   isNavigating: boolean;
@@ -10,9 +14,9 @@ interface NavigationPanelProps {
   timeRemaining: number;
   nextTurnInstruction: string;
   progress: number;
+  currentStepIndex: number;
+  turnInstructions: RouteStep[];
   onStopNavigation: () => void;
-  formatDistanceMeters: (meters: number) => string;
-  formatTimeSeconds: (seconds: number) => string;
 }
 
 export const NavigationPanel = ({
@@ -21,9 +25,9 @@ export const NavigationPanel = ({
   timeRemaining,
   nextTurnInstruction,
   progress,
+  currentStepIndex,
+  turnInstructions,
   onStopNavigation,
-  formatDistanceMeters,
-  formatTimeSeconds,
 }: NavigationPanelProps) => {
   const { colors } = useTheme();
 
@@ -67,9 +71,19 @@ export const NavigationPanel = ({
       </View>
 
       {/* Stop Navigation Button */}
-      <Button onPress={onStopNavigation} variant="destructive">
+      <Button onPress={onStopNavigation} variant="destructive" className="mb-4">
         <Text>Stop Navigation</Text>
       </Button>
+
+      {/* Turn-by-turn list */}
+      <View className="mb-4">
+        <Text className="mb-2 text-sm font-semibold">Steps</Text>
+        <TurnByTurnList
+          turnInstructions={turnInstructions}
+          currentStepIndex={currentStepIndex}
+          maxSteps={6}
+        />
+      </View>
     </View>
   );
 };

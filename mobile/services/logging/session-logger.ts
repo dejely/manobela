@@ -158,6 +158,12 @@ export const sessionLogger = {
    */
   logUploadedVideo: async (videoResult: VideoProcessingResponse, videoName: string) => {
     if (readOnly || !userLoggingEnabled) return null; // blocks writes if read-only or user disabled logging
+    if (!videoResult.frames || videoResult.frames.length === 0) {
+      console.warn('No frames available to log for uploaded video');
+      return null;
+    }
+
+    const frames = videoResult.frames ?? [];
 
     const sessionId = uuid.v4();
     const startedAt = Date.now();
@@ -176,21 +182,38 @@ export const sessionLogger = {
           sessionType: 'upload',
         } as NewSession);
 
-        // Process groups and create metrics from aggregated data
+        // Process frames and create metrics (throttled to match live interval)
         const metricsToInsert: NewMetric[] = [];
+        const framesWithTime = frames
+          .map((frame) => {
+            const timestampMatch = frame.timestamp.match(/(\d+):(\d+):(\d+)\.(\d+)/);
+            if (!timestampMatch) return null;
+            const hours = parseInt(timestampMatch[1], 10);
+            const minutes = parseInt(timestampMatch[2], 10);
+            const seconds = parseInt(timestampMatch[3], 10);
+            const milliseconds = parseInt(timestampMatch[4], 10);
+            const timestampSec = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+            return { frame, timestampMs: startedAt + timestampSec * 1000 };
+          })
+          .filter(
+            (entry): entry is { frame: (typeof videoResult.frames)[number]; timestampMs: number } =>
+              entry !== null
+          )
+          .sort((a, b) => a.timestampMs - b.timestampMs);
 
-        for (const group of videoResult.groups) {
-          if (!group.aggregate.metrics) continue;
+        let lastLoggedAtMs = -Infinity;
 
-          const m = group.aggregate.metrics as any;
-          // Use the middle timestamp of the group interval
-          const groupMidpointSec = (group.start_sec + group.end_sec) / 2;
-          const timestamp = startedAt + groupMidpointSec * 1000;
+        for (const { frame, timestampMs } of framesWithTime) {
+          if (!frame.metrics) continue;
+          if (timestampMs - lastLoggedAtMs < LOG_INTERVAL_MS) continue;
+
+          lastLoggedAtMs = timestampMs;
+          const m = frame.metrics as any;
 
           metricsToInsert.push({
             id: uuid.v4(),
             sessionId,
-            timestamp: Math.round(timestamp),
+            timestamp: Math.round(timestampMs),
 
             faceMissing: m.face_missing ?? false,
 

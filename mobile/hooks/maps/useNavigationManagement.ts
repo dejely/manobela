@@ -1,12 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { OSMViewRef } from 'expo-osm-sdk';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import type { OSMViewRef, Route, RouteStep } from 'expo-osm-sdk';
 import type { Coordinate } from '@/types/maps';
-
-interface Route {
-  coordinates: Coordinate[];
-  distance: number;
-  duration: number;
-}
+import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
 
 interface NavigationState {
   isNavigating: boolean;
@@ -73,29 +68,6 @@ export const useNavigationManagement = ({
   const isMountedRef = useRef(true);
   const navigationArrowIdRef = useRef<string>('navigation-arrow');
   const stopNavigationRef = useRef<(() => Promise<void>) | null>(null);
-
-  // Format distance in meters to human-readable string
-  const formatDistanceMeters = useCallback((meters: number): string => {
-    if (isNaN(meters) || meters < 0) return '0 m';
-
-    if (meters < 1000) {
-      return `${Math.round(meters)} m`;
-    }
-    return `${(meters / 1000).toFixed(1)} km`;
-  }, []);
-
-  // Format time in seconds to human-readable string
-  const formatTimeSeconds = useCallback((seconds: number): string => {
-    if (isNaN(seconds) || seconds < 0) return '0 min';
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes} min`;
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -185,6 +157,50 @@ export const useNavigationManagement = ({
     },
     [route]
   );
+
+  const turnInstructions = useMemo(() => {
+    if (!route) return [];
+
+    if (Array.isArray(route.steps) && route.steps.length > 0) {
+      return route.steps as RouteStep[];
+    }
+
+    const totalCoordinates = route.coordinates.length;
+    if (totalCoordinates < 2) {
+      return [
+        {
+          instruction: 'Continue to destination',
+          distance: 0,
+          duration: 0,
+          coordinate: route.coordinates[0] || { latitude: 0, longitude: 0 },
+        },
+      ] as RouteStep[];
+    }
+
+    const targetSteps = Math.min(12, Math.max(4, Math.floor(totalCoordinates / 10)));
+    const stepSize = Math.max(1, Math.floor(totalCoordinates / targetSteps));
+    const instructions: RouteStep[] = [];
+
+    for (let i = 0; i < totalCoordinates - 1; i += stepSize) {
+      instructions.push({
+        instruction: getNextTurnInstruction(i),
+        distance: calculateDistance(route.coordinates[i], route.coordinates[i + 1]),
+        duration: 0,
+        coordinate: route.coordinates[i],
+      });
+    }
+
+    return instructions.length > 0
+      ? instructions
+      : [
+          {
+            instruction: 'Continue to destination',
+            distance: 0,
+            duration: 0,
+            coordinate: route.coordinates[route.coordinates.length - 1],
+          },
+        ];
+  }, [route, getNextTurnInstruction]);
 
   // Handle location update during navigation
   const handleLocationUpdate = useCallback(
@@ -363,7 +379,6 @@ export const useNavigationManagement = ({
     stopNavigation,
     handleLocationUpdate,
     getNavigationArrowMarker,
-    formatDistanceMeters,
-    formatTimeSeconds,
+    turnInstructions,
   };
 };

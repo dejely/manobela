@@ -67,8 +67,6 @@ export default function MapsScreen() {
     error: routeError,
     calculateRoute,
     clearRoute,
-    formatDistance,
-    formatDuration,
   } = useRouteCalculation({ mapRef });
 
   // Ref to store stopNavigation to avoid circular dependency
@@ -95,8 +93,7 @@ export default function MapsScreen() {
     startNavigation,
     stopNavigation,
     handleLocationUpdate,
-    formatDistanceMeters,
-    formatTimeSeconds,
+    turnInstructions,
   } = useNavigationManagement({
     mapRef,
     route,
@@ -308,16 +305,12 @@ export default function MapsScreen() {
               timeRemaining={navigationState.timeRemaining}
               nextTurnInstruction={navigationState.nextTurnInstruction}
               progress={navigationState.progress}
+              currentStepIndex={navigationState.currentStepIndex}
+              turnInstructions={turnInstructions}
               onStopNavigation={handleStopNavigation}
-              formatDistanceMeters={formatDistanceMeters}
-              formatTimeSeconds={formatTimeSeconds}
             />
           ) : (
-            <RouteInfo
-              route={route}
-              formatDistance={formatDistance}
-              formatDuration={formatDuration}
-            />
+            <RouteInfo route={route} />
           )}
         </BottomSheetView>
       </BottomSheet>
