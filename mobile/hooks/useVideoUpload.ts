@@ -126,9 +126,7 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
 
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
-    const uploadUrl =
-      `${apiBaseUrl}/driver-monitoring/process-video` +
-      `?group_interval_sec=5&include_frames=true&target_fps=10`;
+    const uploadUrl = `${apiBaseUrl}/driver-monitoring/process-video` + `?target_fps=10`;
     xhr.open('POST', uploadUrl);
     xhr.responseType = 'json';
     xhr.setRequestHeader('Accept', 'application/json');
@@ -167,12 +165,9 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
               : (responseBody as VideoProcessingResponse);
           const trimmedFrames = parsed.frames?.map((frame) => ({
             timestamp: frame.timestamp,
-            frame_number: frame.frame_number,
-            resolution: frame.resolution,
             face_landmarks: frame.face_landmarks,
             object_detections: frame.object_detections,
             metrics: frame.metrics,
-            thumbnail_base64: null,
           }));
           setResult({ ...parsed, frames: trimmedFrames });
 
