@@ -3,7 +3,6 @@ const WRONG_API_URL_MESSAGE = 'Wrong API URL. Please verify the API base URL in 
 const BACKEND_UNAVAILABLE_MESSAGE = 'Backend is not available. Please try again later.';
 const UNKNOWN_ERROR_MESSAGE = 'Unknown error. Please try again.';
 
-
 // ADD PATTERNS HERE:
 
 const NO_INTERNET_PATTERNS = [
@@ -15,7 +14,7 @@ const NO_INTERNET_PATTERNS = [
   'network is unreachable',
   'enetwork',
   'failed to fetch',
-  'the internet connection appears to be offline'
+  'the internet connection appears to be offline',
 ];
 
 const WRONG_API_URL_PATTERNS = [
@@ -63,34 +62,25 @@ const BACKEND_UNAVAILABLE_PATTERNS = [
   'network is down',
   'connection lost',
   'broken pipe',
-
 ];
 
 //  ---------------------------
 
-
 const matchesPattern = (message: string, patterns: string[]) =>
   patterns.some((pattern) => message.includes(pattern));
 
-export const mapNetworkErrorMessage = (
-  rawMessage?: string | null,
-  status?: number
-): string => {
+export const mapNetworkErrorMessage = (rawMessage?: string | null, status?: number): string => {
   if (status === 0) return NO_INTERNET_MESSAGE;
   if (status === 404) return WRONG_API_URL_MESSAGE;
   if (status && status >= 500) return BACKEND_UNAVAILABLE_MESSAGE;
 
   const normalized = (rawMessage ?? '').toLowerCase().trim();
 
-  if (matchesPattern(normalized, NO_INTERNET_PATTERNS))
-    return NO_INTERNET_MESSAGE;
+  if (matchesPattern(normalized, NO_INTERNET_PATTERNS)) return NO_INTERNET_MESSAGE;
 
-  if (matchesPattern(normalized, WRONG_API_URL_PATTERNS))
-    return WRONG_API_URL_MESSAGE;
+  if (matchesPattern(normalized, WRONG_API_URL_PATTERNS)) return WRONG_API_URL_MESSAGE;
 
-  if (matchesPattern(normalized, BACKEND_UNAVAILABLE_PATTERNS))
-    return BACKEND_UNAVAILABLE_MESSAGE;
+  if (matchesPattern(normalized, BACKEND_UNAVAILABLE_PATTERNS)) return BACKEND_UNAVAILABLE_MESSAGE;
 
   return UNKNOWN_ERROR_MESSAGE;
 };
-

@@ -7,7 +7,9 @@ export const sessions = sqliteTable('sessions', {
   startedAt: integer('started_at').notNull(),
   endedAt: integer('ended_at'),
   durationMs: integer('duration_ms'),
-  sessionType: text('session_type', { enum: ['live', 'upload'] }).notNull().default('live'),
+  sessionType: text('session_type', { enum: ['live', 'upload'] })
+    .notNull()
+    .default('live'),
 });
 
 /** Metrics table */

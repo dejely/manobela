@@ -46,7 +46,7 @@ export const useMonitoringSession = ({
     startConnection,
     cleanup,
     transportStatus,
-    connectionStatus, 
+    connectionStatus,
     dataChannelState,
     onDataMessage,
     sendDataMessage,
@@ -212,13 +212,7 @@ export const useMonitoringSession = ({
     setSessionState('idle');
     setInferenceData(null);
     latestInferenceRef.current = null;
-  }, [
-    sessionState,
-    connectionStatus,
-    sendMonitoringControl,
-    setStreamEnabled,
-    cleanup,
-  ]);
+  }, [sessionState, connectionStatus, sendMonitoringControl, setStreamEnabled, cleanup]);
 
   const recalibrateHeadPose = useCallback(() => {
     if (dataChannelState === 'open') {
