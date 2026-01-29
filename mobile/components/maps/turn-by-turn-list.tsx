@@ -1,19 +1,14 @@
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
 import type { RouteStep } from 'expo-osm-sdk';
 
 interface TurnByTurnListProps {
   turnInstructions: RouteStep[];
-  formatDistanceMeters: (meters: number) => string;
-  formatTimeSeconds: (seconds: number) => string;
 }
 
-export const TurnByTurnList = ({
-  turnInstructions,
-  formatDistanceMeters,
-  formatTimeSeconds,
-}: TurnByTurnListProps) => {
+export const TurnByTurnList = ({ turnInstructions }: TurnByTurnListProps) => {
   return (
     <BottomSheetFlatList
       data={turnInstructions}

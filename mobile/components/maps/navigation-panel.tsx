@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Text } from '@/components/ui/text';
 import { TurnByTurnList } from '@/components/maps/turn-by-turn-list';
+import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
 import type { RouteStep } from 'expo-osm-sdk';
 
 interface NavigationPanelProps {
@@ -15,8 +16,6 @@ interface NavigationPanelProps {
   progress: number;
   turnInstructions: RouteStep[];
   onStopNavigation: () => void;
-  formatDistanceMeters: (meters: number) => string;
-  formatTimeSeconds: (seconds: number) => string;
 }
 
 export const NavigationPanel = ({
@@ -27,8 +26,6 @@ export const NavigationPanel = ({
   progress,
   turnInstructions,
   onStopNavigation,
-  formatDistanceMeters,
-  formatTimeSeconds,
 }: NavigationPanelProps) => {
   const { colors } = useTheme();
 
@@ -79,11 +76,7 @@ export const NavigationPanel = ({
       {/* Turn-by-turn list */}
       <View className="mb-4">
         <Text className="mb-2 text-sm font-semibold">Steps</Text>
-        <TurnByTurnList
-          turnInstructions={turnInstructions}
-          formatDistanceMeters={formatDistanceMeters}
-          formatTimeSeconds={formatTimeSeconds}
-        />
+        <TurnByTurnList turnInstructions={turnInstructions} />
       </View>
     </View>
   );

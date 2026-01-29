@@ -12,8 +12,6 @@ interface UseRouteCalculationReturn {
     mapRef: React.RefObject<OSMViewRef | null>
   ) => Promise<void>;
   clearRoute: () => void;
-  formatDistance: (route: Route) => string;
-  formatDuration: (route: Route) => string;
 }
 
 export function useRouteCalculation({
@@ -86,27 +84,11 @@ export function useRouteCalculation({
     }
   }, [mapRef, routing]);
 
-  const formatDistance = useCallback(
-    (route: Route) => {
-      return routing.formatRouteDistance(route);
-    },
-    [routing]
-  );
-
-  const formatDuration = useCallback(
-    (route: Route) => {
-      return routing.formatRouteDuration(route);
-    },
-    [routing]
-  );
-
   return {
     route,
     isCalculating,
     error,
     calculateRoute,
     clearRoute,
-    formatDistance,
-    formatDuration,
   };
 }

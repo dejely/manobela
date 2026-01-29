@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { OSMViewRef, Route, RouteStep } from 'expo-osm-sdk';
 import type { Coordinate } from '@/types/maps';
+import { formatDistanceMeters, formatTimeSeconds } from '@/utils/formatting';
 
 interface NavigationState {
   isNavigating: boolean;
@@ -69,27 +70,10 @@ export const useNavigationManagement = ({
   const stopNavigationRef = useRef<(() => Promise<void>) | null>(null);
 
   // Format distance in meters to human-readable string
-  const formatDistanceMeters = useCallback((meters: number): string => {
-    if (isNaN(meters) || meters < 0) return '0 m';
-
-    if (meters < 1000) {
-      return `${Math.round(meters)} m`;
-    }
-    return `${(meters / 1000).toFixed(1)} km`;
-  }, []);
+  const formatDistanceMetersCallback = useCallback(formatDistanceMeters, []);
 
   // Format time in seconds to human-readable string
-  const formatTimeSeconds = useCallback((seconds: number): string => {
-    if (isNaN(seconds) || seconds < 0) return '0 min';
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes} min`;
-  }, []);
+  const formatTimeSecondsCallback = useCallback(formatTimeSeconds, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -402,7 +386,5 @@ export const useNavigationManagement = ({
     handleLocationUpdate,
     getNavigationArrowMarker,
     turnInstructions,
-    formatDistanceMeters,
-    formatTimeSeconds,
   };
 };
