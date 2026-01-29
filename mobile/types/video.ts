@@ -20,8 +20,6 @@ export type VideoProcessingResponse = {
 
 export type VideoFrameResult = {
   timestamp: string;
-  frame_number: number;
-  resolution: { width: number; height: number };
   face_landmarks: number[] | null;
   object_detections: ObjectDetection[] | null;
   metrics: Record<string, unknown> | null;

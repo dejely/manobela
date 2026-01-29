@@ -174,7 +174,6 @@ async def connections(
         429: {"description": "Rate limit exceeded"},
         503: {"description": "Processing timeout exceeded"},
     },
-  response_model_exclude_none=True
 )
 async def process_video_upload(
     request: Request,

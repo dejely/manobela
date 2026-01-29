@@ -138,8 +138,6 @@ def process_uploaded_video(
             frames.append(
                 VideoFrameResult(
                     timestamp=format_timestamp(timestamp_sec),
-                    frame_number=frame_number,
-                    resolution=Resolution(width=w, height=h),
                     face_landmarks=smoothed_landmarks if has_face else None,
                     object_detections=object_detections or None,
                     metrics=metrics,

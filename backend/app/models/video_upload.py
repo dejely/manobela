@@ -11,8 +11,6 @@ class Resolution(BaseModel):
 
 class VideoFrameResult(BaseModel):
     timestamp: str
-    frame_number: int
-    resolution: Resolution
     face_landmarks: list[float] | None = None
     object_detections: list[ObjectDetection] | None = None
     metrics: MetricsOutput | None = None

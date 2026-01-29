@@ -165,8 +165,6 @@ export const useVideoUpload = (apiBaseUrl: string): UseVideoUploadResult => {
               : (responseBody as VideoProcessingResponse);
           const trimmedFrames = parsed.frames?.map((frame) => ({
             timestamp: frame.timestamp,
-            frame_number: frame.frame_number,
-            resolution: frame.resolution,
             face_landmarks: frame.face_landmarks,
             object_detections: frame.object_detections,
             metrics: frame.metrics,

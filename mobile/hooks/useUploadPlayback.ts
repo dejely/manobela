@@ -10,7 +10,6 @@ type FrameWithTimestamp = VideoFrameResult & { timestampSec: number };
 type OverlaySnapshot = {
   landmarks: number[] | null;
   detections: ObjectDetection[] | null;
-  resolution: { width: number; height: number } | null;
   atMs: number;
 };
 
@@ -146,7 +145,6 @@ export const useUploadPlayback = ({
       setOverlaySnapshot({
         landmarks: activeFrame.face_landmarks ?? null,
         detections: activeFrame.object_detections ?? null,
-        resolution: activeFrame.resolution ?? null,
         atMs: playbackPositionMs,
       });
       return;
@@ -162,10 +160,7 @@ export const useUploadPlayback = ({
   }, [activeFrame, playbackPositionMs, showOverlays, holdMs]);
 
   const overlayResolution =
-    overlaySnapshot?.resolution ??
-    activeFrame?.resolution ??
-    result?.video_metadata?.resolution ??
-    null;
+    overlaySnapshot?.resolution ?? result?.video_metadata?.resolution ?? null;
   const overlayLandmarks = showOverlays ? (overlaySnapshot?.landmarks ?? null) : null;
   const overlayDetections = showOverlays ? (overlaySnapshot?.detections ?? null) : null;
   const canRenderOverlay =
