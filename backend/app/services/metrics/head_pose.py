@@ -9,7 +9,7 @@ from app.services.metrics.utils.head_pose_2d import compute_head_pose_angles_2d
 logger = logging.getLogger(__name__)
 
 
-class HeadPoseMetricOutput(MetricOutputBase):
+class HeadPoseMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
     """

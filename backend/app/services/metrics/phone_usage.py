@@ -5,7 +5,7 @@ from app.services.metrics.frame_context import FrameContext
 PHONE_CLASS_ID = 67  # COCO
 
 
-class PhoneUsageMetricOutput(MetricOutputBase):
+class PhoneUsageMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
         phone_usage: Whether phone detection has been sustained for at least min_usage_duration_sec.

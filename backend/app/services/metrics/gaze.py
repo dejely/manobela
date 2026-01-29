@@ -15,7 +15,7 @@ from app.services.smoother import SequenceSmoother
 logger = logging.getLogger(__name__)
 
 
-class GazeMetricOutput(MetricOutputBase):
+class GazeMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
         gaze_alert: Whether gaze has been outside the configured range for at least min_sustained_sec.

@@ -10,7 +10,7 @@ from app.services.smoother import ScalarSmoother
 logger = logging.getLogger(__name__)
 
 
-class YawnMetricOutput(MetricOutputBase):
+class YawnMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
         mar: Mouth Aspect Ratio (MAR) value for the current frame, if available.

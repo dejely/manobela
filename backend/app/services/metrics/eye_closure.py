@@ -11,7 +11,7 @@ from app.services.smoother import ScalarSmoother
 logger = logging.getLogger(__name__)
 
 
-class EyeClosureMetricOutput(MetricOutputBase):
+class EyeClosureMetricOutput(MetricOutputBase, total=False):
     """
     Attributes:
         ear: Eye Aspect Ratio (EAR) value for the current frame, if available.
