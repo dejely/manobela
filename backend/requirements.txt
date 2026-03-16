@@ -1349,9 +1349,9 @@ pylibsrtp==1.0.0 \
     --hash=sha256:c134fa09e7b80a5b7fed626230c5bc257fd771bd6978e754343e7a61d96bc7e6 \
     --hash=sha256:f02e616c9dfab2b03b32d8cc7b748f9d91814c0211086f987629a60f05f6e2cc
     # via aiortc
-pyopenssl==25.3.0 \
-    --hash=sha256:1fda6fc034d5e3d179d39e59c1895c9faeaf40a79de5fc4cbbfbe0d36f4a77b6 \
-    --hash=sha256:c981cb0a3fd84e8602d7afc209522773b94c1c2446a3c710a75b06fe1beae329
+pyopenssl==26.0.0 \
+    --hash=sha256:df94d28498848b98cc1c0ffb8ef1e71e40210d3b0a8064c9d29571ed2904bf81 \
+    --hash=sha256:f293934e52936f2e3413b89c6ce36df66a0b34ae1ea3a053b8c5020ff2f513fc
     # via aiortc
 pyreadline3==3.5.4 ; sys_platform == 'win32' \
     --hash=sha256:8d57d53039a1c75adba8e50dd3d992b28143480816187ea5efbd5c78e6c885b7 \
